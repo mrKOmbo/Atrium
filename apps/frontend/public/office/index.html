@@ -1,0 +1,3737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Atrium Clinic — Equipo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,120,73,0.07), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(96,165,250,0.05), transparent 60%),
+      #07080b;
+    color: #e7eaf2;
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 56px 56px;
+    pointer-events: none; z-index: 0;
+  }
+
+  #canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
+
+  /* Top bar */
+  .top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    pointer-events: none;
+  }
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 16px; letter-spacing: -0.02em;
+    pointer-events: auto;
+  }
+  .logo-mark {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: linear-gradient(135deg, #ff7849, #ff5e2c);
+    display: grid; place-items: center;
+    box-shadow: 0 0 18px rgba(255,120,73,0.4);
+  }
+  .logo-mark svg { width: 14px; height: 14px; }
+  .top-meta {
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    display: inline-flex; align-items: center; gap: 12px;
+    pointer-events: auto;
+    background: rgba(13,15,21,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 7px 14px;
+  }
+  .top-meta .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; animation: pulse 2s infinite; }
+  .top-meta .sep { color: rgba(255,255,255,0.25); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Chat bubbles overlay */
+  .bubbles { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+  .chat-bubble {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: rgba(13,15,21,0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #e7eaf2;
+    max-width: 220px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    opacity: 0;
+    transition: opacity 0.25s;
+    white-space: pre-wrap;
+  }
+  .chat-bubble.show { opacity: 1; }
+  .chat-bubble::after {
+    content: "";
+    position: absolute; bottom: -5px; left: 22px;
+    width: 10px; height: 10px;
+    background: rgba(13,15,21,0.92);
+    border-right: 1px solid rgba(255,255,255,0.14);
+    border-bottom: 1px solid rgba(255,255,255,0.14);
+    transform: rotate(45deg);
+  }
+  .chat-bubble .author {
+    font-family: "Geist Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+  }
+
+  /* Activity cards (persistent task indicator above each agent) */
+  .activity-cards { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+  .activity-card {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    min-width: 130px;
+    background: linear-gradient(180deg, rgba(15,18,26,0.96), rgba(10,12,18,0.96));
+    border: 1px solid var(--c, rgba(255,255,255,0.18));
+    border-radius: 10px;
+    padding: 7px 10px 8px;
+    color: #e8eef9;
+    font: 500 11px/1.3 "Geist", -apple-system, sans-serif;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.25s;
+    overflow: hidden;
+  }
+  .activity-card.show { opacity: 1; }
+  .activity-card::after {
+    content: "";
+    position: absolute; bottom: -5px; left: 50%; margin-left: -5px;
+    width: 10px; height: 10px;
+    background: rgba(10,12,18,0.96);
+    border-right: 1px solid var(--c, rgba(255,255,255,0.18));
+    border-bottom: 1px solid var(--c, rgba(255,255,255,0.18));
+    transform: rotate(45deg);
+  }
+  .activity-card .ac-row {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .activity-card .ac-icon {
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 5px; flex-shrink: 0;
+    background: var(--c, #888); color: #07080b;
+    font-size: 11px; font-weight: 700;
+  }
+  .activity-card .ac-label {
+    font-family: "Geist Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--c, #aaa);
+    flex: 1; min-width: 0;
+  }
+  .activity-card .ac-task {
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .activity-card .ac-bar {
+    margin-top: 6px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+    position: relative;
+  }
+  .activity-card .ac-bar-fill {
+    position: absolute; top: 0; bottom: 0;
+    width: 35%;
+    background: var(--c, #fff);
+    border-radius: 2px;
+    animation: ac-shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes ac-shimmer {
+    0%   { left: -35%; }
+    100% { left: 100%; }
+  }
+  .activity-card.solid .ac-bar-fill { animation: none; left: 0; width: 100%; opacity: 0.45; }
+
+  /* Mini "what they're building" preview — base demo, swap per role later */
+  .activity-card .ac-preview {
+    margin-top: 7px;
+    height: 64px;
+    width: 156px;
+    border-radius: 6px;
+    background: #0a0c12;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+    position: relative;
+    display: none;
+  }
+  .activity-card.has-preview .ac-preview { display: block; }
+  .ac-preview .pv-chrome {
+    height: 11px;
+    background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; gap: 3px;
+    padding: 0 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .ac-preview .pv-chrome i {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(255,255,255,0.16);
+    display: block;
+  }
+  .ac-preview .pv-body {
+    position: absolute; left: 0; right: 0; top: 11px; bottom: 0;
+    padding: 5px 6px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .ac-preview .pv-head {
+    height: 5px; border-radius: 2px;
+    background: var(--c, #5dd4a4);
+    width: 0;
+    animation: pv-grow 0.6s ease-out 0.1s forwards;
+  }
+  .ac-preview .pv-row {
+    display: flex; gap: 3px; flex: 1; min-height: 0;
+  }
+  .ac-preview .pv-block {
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    flex: 1;
+    transform: scaleY(0); transform-origin: top;
+    animation: pv-pop 0.35s ease-out forwards;
+  }
+  .ac-preview .pv-block.b1 { animation-delay: 0.7s; }
+  .ac-preview .pv-block.b2 { animation-delay: 0.85s; }
+  .ac-preview .pv-block.b3 { animation-delay: 1.0s; flex: 0.6; }
+  .ac-preview .pv-lines { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+  .ac-preview .pv-ln {
+    height: 3px; border-radius: 1.5px;
+    background: rgba(255,255,255,0.12);
+    width: 0;
+    animation: pv-grow 0.5s ease-out forwards;
+  }
+  .ac-preview .pv-ln:nth-child(1) { animation-delay: 1.15s; --w: 80%; }
+  .ac-preview .pv-ln:nth-child(2) { animation-delay: 1.30s; --w: 60%; }
+  .ac-preview .pv-ln:nth-child(3) { animation-delay: 1.45s; --w: 90%; }
+  .ac-preview .pv-btn {
+    height: 7px; border-radius: 3px;
+    background: var(--c, #5dd4a4);
+    width: 0;
+    margin-top: 2px;
+    animation: pv-grow 0.4s ease-out 1.65s forwards, pv-pulse 1.4s ease-in-out 2.1s infinite;
+    --w: 32%;
+    opacity: 0.85;
+  }
+  /* Whole preview cycles every ~3.6s */
+  .ac-preview .pv-body { animation: pv-cycle 3.6s linear infinite; }
+
+  @keyframes pv-grow {
+    from { width: 0; }
+    to   { width: var(--w, 70%); }
+  }
+  @keyframes pv-pop {
+    from { transform: scaleY(0); opacity: 0.3; }
+    to   { transform: scaleY(1); opacity: 1; }
+  }
+  @keyframes pv-pulse {
+    0%, 100% { opacity: 0.85; }
+    50%      { opacity: 0.45; }
+  }
+  @keyframes pv-cycle {
+    0%        { opacity: 1; }
+    85%       { opacity: 1; }
+    92%       { opacity: 0.15; }
+    100%      { opacity: 1; }
+  }
+
+  /* Toggle in agent modal header */
+  .am-activity-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 7px;
+    padding: 5px 9px;
+    font: 500 10px/1 "Geist Mono", monospace;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .am-activity-toggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .am-activity-toggle.on {
+    background: color-mix(in srgb, var(--c, #5dd4a4) 18%, transparent);
+    border-color: var(--c, #5dd4a4);
+    color: var(--c, #5dd4a4);
+  }
+  .am-activity-toggle .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+  }
+  .am-activity-toggle.on .dot { background: var(--c, #5dd4a4); box-shadow: 0 0 6px var(--c, #5dd4a4); }
+
+  /* Right-edge drawer tabs */
+  .drawer-tabs { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 6px; }
+  .drawer-tab {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    background: rgba(13,15,21,0.85); color: var(--c, #fff);
+    border: 1px solid rgba(255,255,255,0.10); border-right: none;
+    border-radius: 10px 0 0 10px;
+    padding: 14px 8px; font: 600 10px/1 'Geist Mono', monospace;
+    letter-spacing: 0.18em; cursor: pointer;
+    box-shadow: -4px 0 14px rgba(0,0,0,0.3);
+    transition: background 0.15s, padding-right 0.15s;
+  }
+  .drawer-tab:hover { background: rgba(20,24,32,0.95); padding-right: 12px; }
+
+  .drawer {
+    position: fixed; top: 70px; right: -440px; bottom: 20px; z-index: 40;
+    width: 420px; max-width: 90vw;
+    background: rgba(10,12,18,0.94);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-right: none;
+    border-radius: 14px 0 0 14px;
+    box-shadow: -20px 0 60px rgba(0,0,0,0.6);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: right 0.3s cubic-bezier(.2,.9,.3,1);
+  }
+  .drawer.open { right: 0; }
+  .drawer-head { padding: 18px 18px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .drawer-title { color: var(--c); font: 600 13px/1 'Geist Mono', monospace; letter-spacing: 0.16em; margin-bottom: 6px; }
+  .drawer-sub { color: rgba(255,255,255,0.55); font-size: 12px; line-height: 1.4; }
+  .drawer-close { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.7); width: 28px; height: 28px; border-radius: 7px; cursor: pointer; flex-shrink: 0; }
+  .drawer-close:hover { background: rgba(255,255,255,0.10); color: #fff; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  .drw-actions { display: flex; gap: 8px; }
+  .drw-btn { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: #e7eaf2; padding: 9px 12px; border-radius: 8px; font: 600 10px/1 'Geist Mono', monospace; letter-spacing: 0.12em; cursor: pointer; }
+  .drw-btn:hover { background: rgba(255,255,255,0.08); }
+  .drw-btn.primary { border-color: rgba(93,212,164,0.4); color: #5dd4a4; }
+  .drw-btn.small { flex: 0; padding: 6px 10px; font-size: 9px; }
+
+  .drw-tabs { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.12em; color: rgba(255,255,255,0.45); }
+  .drw-tabs .active { color: #5dd4a4; }
+
+  .drw-section-title { font: 600 10px/1 'Geist Mono', monospace; letter-spacing: 0.16em; color: rgba(255,255,255,0.55); margin-top: 6px; }
+  .drw-section-sub { color: rgba(255,255,255,0.5); font-size: 12px; line-height: 1.4; margin-top: -8px; }
+
+  .drw-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 14px; }
+  .drw-card-head { display: flex; align-items: center; gap: 8px; font: 600 10px/1 'Geist Mono', monospace; letter-spacing: 0.14em; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+  .drw-card-head .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+  .drw-card-body { font-size: 13px; color: #e7eaf2; line-height: 1.4; }
+  .drw-card-meta { font-size: 10px; color: rgba(255,255,255,0.4); font-family: 'Geist Mono', monospace; margin-top: 6px; letter-spacing: 0.06em; }
+
+  .drw-daterange { display: flex; align-items: center; gap: 10px; font: 500 10px/1.4 'Geist Mono', monospace; color: rgba(255,255,255,0.5); }
+  .drw-daterange strong { color: #fff; font-size: 14px; font-weight: 600; }
+  .drw-banner { background: rgba(93,212,164,0.08); border: 1px solid rgba(93,212,164,0.2); color: #5dd4a4; padding: 10px 12px; border-radius: 8px; font-size: 12px; }
+
+  .drw-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .drw-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px; }
+  .drw-stat .lbl { font: 600 9px/1 'Geist Mono', monospace; letter-spacing: 0.14em; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+  .drw-stat .num { font: 700 22px/1 'Inter', sans-serif; color: #fff; margin-bottom: 4px; }
+  .drw-stat .sub { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.3; }
+
+  .drw-hero { background: linear-gradient(135deg, color-mix(in oklab, var(--c) 18%, transparent), color-mix(in oklab, var(--c) 5%, transparent)); border: 1px solid color-mix(in oklab, var(--c) 30%, transparent); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .drw-hero-icon { font-size: 36px; filter: drop-shadow(0 0 12px var(--c)); }
+  .drw-hero-num { font: 700 28px/1 'Inter', sans-serif; color: #fff; }
+  .drw-hero-lbl { color: var(--c); font: 600 11px/1 'Geist Mono', monospace; letter-spacing: 0.14em; margin-top: 6px; }
+  .drw-hero-sub { color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 4px; }
+
+  .drw-bar { background: rgba(255,255,255,0.05); border-radius: 999px; height: 8px; overflow: hidden; position: relative; margin-bottom: 4px; }
+  .drw-bar-fill { height: 100%; background: var(--c); border-radius: 999px; box-shadow: 0 0 8px var(--c); }
+  .drw-bar-lbl { display: block; font: 500 10px/1 'Geist Mono', monospace; color: rgba(255,255,255,0.55); margin-top: 6px; letter-spacing: 0.08em; }
+
+  .drw-row { display: grid; grid-template-columns: 10px 60px 1fr 40px; gap: 10px; align-items: center; font-size: 12px; color: #e7eaf2; }
+  .drw-row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+  .drw-rowbar { background: rgba(255,255,255,0.06); border-radius: 999px; height: 6px; overflow: hidden; }
+  .drw-rowbar div { height: 100%; border-radius: 999px; }
+  .drw-row strong { font: 600 11px/1 'Geist Mono', monospace; color: rgba(255,255,255,0.85); text-align: right; }
+
+  .drw-tip { background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.18); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 6px; }
+
+  /* Floating chat FAB */
+  .chat-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 45;
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 52px; padding: 0 20px 0 16px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(36,41,52,0.96), rgba(20,23,30,0.96));
+    color: #f3f5fa;
+    font: 600 14px/1 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.42), 0 2px 6px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .chat-fab:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(46,52,66,0.98), rgba(28,32,42,0.98));
+    box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 3px 8px rgba(0,0,0,0.35),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .chat-fab:active { transform: translateY(0); }
+  .chat-fab svg {
+    width: 22px; height: 22px;
+    color: #b9c2d6;
+    flex-shrink: 0;
+  }
+  .chat-fab-label { white-space: nowrap; }
+  /* dot pulse to suggest activity */
+  .chat-fab::after {
+    content: ''; position: absolute; top: 10px; right: 12px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #5dd4a4;
+    box-shadow: 0 0 0 2px rgba(20,23,30,0.96), 0 0 10px rgba(93,212,164,0.6);
+    animation: chatFabPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes chatFabPulse {
+    0%, 100% { transform: scale(1);   opacity: 1;   }
+    50%      { transform: scale(1.15); opacity: 0.7; }
+  }
+  /* Hide FAB while modal is open */
+  body.chat-open .chat-fab { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
+  /* Agent interaction modal (docked bottom-right, no backdrop blur) */
+  .agent-modal-backdrop {
+    position: fixed; right: 20px; bottom: 20px; z-index: 50;
+    display: none;
+    pointer-events: none;
+  }
+  .agent-modal-backdrop.show { display: block; }
+
+  .agent-modal {
+    width: min(1080px, 96vw);
+    height: min(760px, 92vh);
+    background: #07080b;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    display: grid; grid-template-columns: 180px 1fr;
+    overflow: hidden;
+    pointer-events: auto;
+    animation: modalIn 0.28s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.97) } to { opacity: 1; transform: none } }
+
+  /* Sidebar - agent list */
+  .am-sidebar {
+    background: #050609;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .am-sidebar-head {
+    padding: 14px 14px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: "Geist Mono", monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .am-sidebar-head .count { color: rgba(255,255,255,0.35); }
+  .am-search {
+    margin: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 12px; font-family: inherit;
+    display: flex; align-items: center; gap: 8px;
+    cursor: default;
+  }
+  .am-list { flex: 1; overflow-y: auto; padding: 0 6px 6px; display: flex; flex-direction: column; gap: 2px; }
+  .am-list-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    border-left: 2px solid transparent;
+    transition: background 0.12s, color 0.12s;
+  }
+  .am-list-item:hover { background: rgba(255,255,255,0.04); color: #fff; }
+  .am-list-item.active {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-left-color: var(--c, #4ade80);
+  }
+  .am-list-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c, #4ade80); box-shadow: 0 0 5px var(--c, #4ade80); flex-shrink: 0; }
+
+  /* Main panel */
+  .am-main { display: flex; flex-direction: column; min-height: 0; }
+
+  /* Neural Mind viz embedded at top of main panel */
+  .am-mind {
+    position: relative;
+    height: 320px; min-height: 320px;
+    background: radial-gradient(ellipse at center, rgba(15,18,28,0.95), #04050a 75%);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .am-mind canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .am-mind-label {
+    position: absolute; left: 14px; top: 12px;
+    font: 600 9px/1 'Geist Mono', monospace; letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.45);
+    z-index: 2;
+  }
+  .am-mind-label .live {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--c, #5dd4a4); box-shadow: 0 0 6px var(--c, #5dd4a4);
+    margin-right: 6px; vertical-align: 1px;
+    animation: amMindBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes amMindBlink { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .am-mind-layers {
+    position: absolute; left: 0; right: 0; bottom: 8px;
+    display: flex; justify-content: space-around;
+    font: 500 8px/1 'Geist Mono', monospace; letter-spacing: 0.16em;
+    color: rgba(255,255,255,0.32);
+    pointer-events: none; z-index: 2;
+  }
+  .am-mind-stats {
+    position: absolute; right: 56px; top: 12px;
+    display: flex; gap: 12px;
+    font: 500 9px/1 'Geist Mono', monospace; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.55);
+    z-index: 2;
+  }
+  .am-mind-stats span strong { color: var(--c, #5dd4a4); font-weight: 600; margin-left: 4px; }
+  .am-head {
+    padding: 16px 18px 14px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .am-avatar {
+    width: 40px; height: 40px; border-radius: 11px;
+    background: var(--c, #ff7849);
+    display: grid; place-items: center;
+    color: #07080b; font-weight: 700; font-size: 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 18px var(--c, #ff7849);
+    position: relative;
+  }
+  .am-avatar::after {
+    content: "✎"; position: absolute; bottom: -3px; right: -3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; color: #07080b;
+    font-size: 9px; display: grid; place-items: center;
+    box-shadow: 0 0 0 2px #07080b;
+  }
+  .am-name { font-size: 16px; font-weight: 600; color: #fff; flex: 1; }
+  .am-newsession {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.7);
+    padding: 5px 10px; border-radius: 7px;
+    font-size: 11px; font-family: "Geist Mono", monospace;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .am-newsession:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .am-close {
+    position: absolute; top: 12px; right: 12px; z-index: 10;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6);
+    display: grid; place-items: center;
+    cursor: pointer; font-size: 13px;
+    transition: background 0.15s;
+  }
+  .am-close:hover { background: rgba(255,255,255,0.10); color: #fff; }
+
+  /* Conversation area */
+  .am-conv { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .am-msg { display: flex; gap: 10px; align-items: flex-start; }
+  .am-msg.user { flex-direction: row-reverse; }
+  .am-msg-avatar {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--c, #ff7849);
+    color: #07080b; font-weight: 700; font-size: 12px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px color-mix(in oklab, var(--c, #ff7849) 60%, transparent);
+  }
+  .am-msg-avatar.user { background: rgba(255,255,255,0.12); color: #fff; box-shadow: none; }
+  .am-msg-body { flex: 1; min-width: 0; }
+  .am-msg-author { font-size: 13px; color: #fff; margin-bottom: 5px; font-weight: 500; }
+  .am-msg-bubble {
+    padding: 11px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px; line-height: 1.55; color: #e7eaf2;
+    white-space: pre-wrap;
+  }
+  .am-msg.user .am-msg-bubble {
+    background: rgba(255,120,73,0.08);
+    border-color: rgba(255,120,73,0.18);
+  }
+  .am-msg-hint {
+    color: rgba(255,255,255,0.35);
+    font-family: "Geist Mono", monospace; font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .am-thinking {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+  .am-thinking .dot {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--c, #ff7849);
+    animation: bounce 1.2s infinite;
+  }
+  .am-thinking .dot:nth-child(2) { animation-delay: 0.15s }
+  .am-thinking .dot:nth-child(3) { animation-delay: 0.3s }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.4 } 40% { transform: scale(1.1); opacity: 1 } }
+
+  /* Quick prompt chips inside conversation */
+  .am-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .am-chip {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.75);
+    font-size: 11px; font-family: inherit;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .am-chip:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: var(--c, rgba(255,255,255,0.2));
+    color: #fff;
+  }
+
+  /* Footer: model + intensity selectors, then input */
+  .am-foot {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 16px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: rgba(0,0,0,0.2);
+  }
+  .am-selectors { display: flex; gap: 8px; }
+  .am-select {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: rgba(255,255,255,0.85);
+    font-size: 11px; font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' stroke='%23ffffff80' stroke-width='1.4' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 8px center;
+    padding-right: 24px;
+    transition: border-color 0.12s;
+  }
+  .am-select:hover { border-color: rgba(255,255,255,0.35); }
+  .am-select option { background: #1a1d24; color: #fff; }
+
+  .am-input-wrap {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .am-input-wrap:focus-within {
+    border-color: var(--c, #ff7849);
+    background: rgba(255,255,255,0.06);
+  }
+  .am-input {
+    width: 100%;
+    background: transparent;
+    border: none; outline: none;
+    color: #fff; font-size: 13px; font-family: inherit;
+    padding: 4px 0;
+  }
+  .am-input::placeholder { color: rgba(255,255,255,0.35); }
+  .am-input-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+  .am-iconbtn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.7);
+    padding: 5px 10px; border-radius: 7px;
+    font-size: 11px; font-family: inherit;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .am-iconbtn:hover { background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.2); }
+  .am-iconbtn svg { width: 12px; height: 12px; }
+  .am-send {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 7px;
+    padding: 5px 14px;
+    font-size: 11px; font-family: inherit; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .am-send.ready {
+    background: var(--c, #ff7849);
+    color: #07080b;
+    border-color: var(--c, #ff7849);
+  }
+  .am-send.ready:hover { filter: brightness(1.1); }
+
+  /* Roster panel (right) */
+  .panel {
+    position: fixed; top: 70px; right: 20px; bottom: 20px; z-index: 10;
+    width: 280px;
+    background: rgba(13,15,21,0.78);
+    backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+    transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .25s;
+  }
+  .panel.collapsed { transform: translateX(calc(100% + 30px)); opacity: 0; pointer-events: none; }
+  .panel-toggle {
+    position: fixed; top: 78px; right: 20px; z-index: 11;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: rgba(13,15,21,0.85); border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.75); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(10px);
+    transition: background .2s, transform .35s cubic-bezier(.4,0,.2,1);
+    font: 600 10px/1 'Geist Mono', monospace; letter-spacing: 0.1em;
+  }
+  .panel-toggle:hover { background: rgba(125,249,255,0.15); color: #7df9ff; }
+  .panel-toggle.panel-open { transform: translateX(-300px); }
+  .panel h3 {
+    margin: 0;
+    font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-sub {
+    font-size: 10px; color: rgba(255,255,255,0.4);
+    font-family: "Geist Mono", monospace;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: -8px;
+  }
+  .roster { display: flex; flex-direction: column; gap: 6px; }
+  .roster-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  }
+  .roster-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
+  .roster-item.active {
+    background: rgba(255,120,73,0.10);
+    border-color: rgba(255,120,73,0.35);
+  }
+  .ros-avatar {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--c, #ff7849);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 12px var(--c, #ff7849);
+    color: #07080b; font-weight: 700; font-size: 12px;
+  }
+  .ros-info { flex: 1; min-width: 0; }
+  .ros-name { font-size: 13px; font-weight: 500; color: #fff; }
+  .ros-role { font-size: 10px; color: rgba(255,255,255,0.5); font-family: "Geist Mono", monospace; }
+  .ros-status {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--s, #4ade80);
+    box-shadow: 0 0 6px var(--s, #4ade80);
+    flex-shrink: 0;
+  }
+
+  .controls { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .ctrl-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11px; }
+  .ctrl-row label { color: rgba(255,255,255,0.65); font-size: 11px; }
+  .ctrl-row .val { font-family: "Geist Mono", monospace; font-size: 10px; color: rgba(255,255,255,0.5); }
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 3px;
+    background: rgba(255,255,255,0.1); border-radius: 999px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: #fff; border-radius: 50%; cursor: pointer;
+  }
+  .toolbar-pill {
+    position: fixed; bottom: 22px; left: 22px; /* no centrado: deja libre el centro para el dock del parent */
+    z-index: 10;
+    display: flex; align-items: center; gap: 14px;
+    padding: 9px 16px; border-radius: 999px;
+    background: rgba(13,15,21,0.85); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.10);
+    font-family: "Geist Mono", monospace; font-size: 11px;
+    color: rgba(255,255,255,0.6);
+  }
+  body.embed .toolbar-pill { display: none; } /* el parent ya tiene su propio dock */
+  .toolbar-pill .item { display: inline-flex; align-items: center; gap: 6px; }
+  .toolbar-pill .item .d { width: 6px; height: 6px; border-radius: 50%; }
+  .toolbar-pill .sep { color: rgba(255,255,255,0.2); }
+
+  .hint { position: fixed; bottom: 22px; left: 22px; z-index: 10; font-family: "Geist Mono", monospace; font-size: 10px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<canvas id="neuralCanvas" style="position:fixed;inset:0;width:100%;height:100%;display:none;z-index:2;background:radial-gradient(ellipse at center,#0a1226 0%,#05070d 70%);"></canvas>
+
+<!-- View toggle (top-right of screen) -->
+<div id="viewToggle" style="position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:0;background:rgba(13,15,21,0.92);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:4px;backdrop-filter:blur(10px);">
+  <button class="vt-btn active" data-view="office" style="background:rgba(125,249,255,0.15);color:#7df9ff;border:0;padding:8px 16px;font:600 10px/1 'Geist Mono',monospace;letter-spacing:0.14em;border-radius:7px;cursor:pointer;">OFFICE</button>
+  <button class="vt-btn" data-view="neural" style="background:transparent;color:rgba(255,255,255,0.55);border:0;padding:8px 16px;font:600 10px/1 'Geist Mono',monospace;letter-spacing:0.14em;border-radius:7px;cursor:pointer;">NEURAL MIND</button>
+</div>
+
+<!-- Dimension toggle (only visible in neural mode) -->
+<div id="dimToggle" style="display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:50;gap:0;background:rgba(13,15,21,0.92);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:4px;backdrop-filter:blur(10px);">
+  <button class="dim-btn active" data-dim="2d" style="background:rgba(167,139,250,0.18);color:#a78bfa;border:0;padding:6px 14px;font:600 9px/1 'Geist Mono',monospace;letter-spacing:0.16em;border-radius:7px;cursor:pointer;">2D</button>
+  <button class="dim-btn" data-dim="3d" style="background:transparent;color:rgba(255,255,255,0.55);border:0;padding:6px 14px;font:600 9px/1 'Geist Mono',monospace;letter-spacing:0.16em;border-radius:7px;cursor:pointer;">3D</button>
+</div>
+
+<div class="top">
+  <div class="logo">
+    <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8 L12 4 L20 8 L20 16 L12 20 L4 16 Z" stroke="white" stroke-width="2" stroke-linejoin="round" /></svg></span>
+    ATRIUM · CLINIC
+  </div>
+  <div class="top-meta">
+    <span><span class="dot"></span>CONNECTED</span>
+    <span class="sep">•</span>
+    <span id="working">2 working</span>
+    <span class="sep">•</span>
+    <span id="idle">3 idle</span>
+    <span class="sep">•</span>
+    <span id="fps">60 fps</span>
+  </div>
+</div>
+
+<div class="bubbles" id="bubbles"></div>
+<div class="activity-cards" id="activityCards"></div>
+
+<!-- Floating chat FAB -->
+<button id="chatFab" class="chat-fab" aria-label="Open agent chat">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-4 3v-3H5a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="9"  cy="11" r="1.1" fill="currentColor"/>
+    <circle cx="12" cy="11" r="1.1" fill="currentColor"/>
+    <circle cx="15" cy="11" r="1.1" fill="currentColor"/>
+  </svg>
+  <span class="chat-fab-label">Chat with agents</span>
+</button>
+
+<!-- Agent interaction modal (docked bottom-right, sidebar + chat) -->
+<div class="agent-modal-backdrop" id="agentModal">
+  <div class="agent-modal" id="agentModalCard">
+    <button class="am-close" id="amClose" aria-label="Close">✕</button>
+    <!-- Sidebar -->
+    <aside class="am-sidebar">
+      <div class="am-sidebar-head">
+        <span>Agents</span>
+        <span class="count" id="amCount">0</span>
+      </div>
+      <div class="am-search">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M14 14l-3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span>Search…</span>
+      </div>
+      <div class="am-list" id="amList"></div>
+    </aside>
+
+    <!-- Main -->
+    <section class="am-main">
+      <div class="am-mind" id="amMind">
+        <canvas id="amMindCanvas"></canvas>
+        <div class="am-mind-label"><span class="live"></span>NEURAL ACTIVITY</div>
+        <div class="am-mind-stats">
+          <span>NODES <strong id="amMindNodes">0</strong></span>
+          <span>PULSES <strong id="amMindPulses">0</strong></span>
+          <span>STATE <strong id="amMindState">idle</strong></span>
+        </div>
+        <div class="am-mind-layers">
+          <span>INPUT</span><span>EMBED</span><span>ATTN 1</span><span>ATTN 2</span><span>ATTN 3</span><span>OUTPUT</span>
+        </div>
+      </div>
+      <header class="am-head">
+        <div class="am-avatar" id="amAvatar">A</div>
+        <div class="am-name" id="amName">Agent</div>
+        <button class="am-activity-toggle" id="amActivityToggle" title="Show what this agent is working on">
+          <span class="dot"></span>Activity
+        </button>
+        <button class="am-newsession" id="amNewSession">New session</button>
+      </header>
+      <div class="am-conv" id="amConv"></div>
+      <footer class="am-foot">
+        <div class="am-selectors">
+          <select class="am-select" id="amModel">
+            <option>Claude Sonnet 4.5</option>
+            <option>Claude Opus 4.1</option>
+            <option>Claude Haiku 4.5</option>
+            <option>Mock Office</option>
+          </select>
+          <select class="am-select" id="amIntensity">
+            <option>High intensity</option>
+            <option>Medium intensity</option>
+            <option>Low intensity</option>
+          </select>
+        </div>
+        <div class="am-input-wrap">
+          <input type="text" class="am-input" id="amInput" placeholder="Type a message…" />
+          <div class="am-input-actions">
+            <button class="am-iconbtn" id="amAttach" title="Attach file">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M11 5l-5 5a2 2 0 102.83 2.83l5-5a3 3 0 10-4.24-4.24L4 8.59" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Attach
+            </button>
+            <input type="file" id="amFile" style="display:none" />
+            <button class="am-iconbtn" id="amMic" title="Voice input">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="6" y="2" width="4" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 8a4.5 4.5 0 009 0M8 12.5V14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Mic
+            </button>
+            <button class="am-send" id="amSend">Send</button>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </div>
+</div>
+
+<!-- Right-edge drawer tabs -->
+<div class="drawer-tabs">
+  <button class="drawer-tab" data-drawer="hq" style="--c:#5dd4a4">HEADQUARTERS</button>
+  <button class="drawer-tab" data-drawer="analytics" style="--c:#a78bfa">ANALYTICS</button>
+  <button class="drawer-tab" data-drawer="sustain" style="--c:#38bdf8">SUSTAINABILITY</button>
+</div>
+
+<!-- HEADQUARTERS drawer -->
+<div class="drawer" id="drawer-hq">
+  <div class="drawer-head" style="--c:#5dd4a4">
+    <div>
+      <div class="drawer-title">PATIENT BOARD</div>
+      <div class="drawer-sub">Monitor admissions, rounds, and schedules.</div>
+    </div>
+    <button class="drawer-close" data-close>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drw-actions">
+      <button class="drw-btn primary">ADD AGENT</button>
+      <button class="drw-btn">BUILD COMPANY</button>
+    </div>
+    <div class="drw-tabs">
+      <span class="active">INBOX</span><span>HISTORY</span><span>KANBAN</span><span>PLAYBOOK</span>
+    </div>
+    <div class="drw-section-title">RESULTS CENTER</div>
+    <div class="drw-section-sub">Latest assistant output from every desk.</div>
+    <div class="drw-card"><div class="drw-card-head"><span class="dot" style="--c:#ff7849"></span>PIXEL</div><div class="drw-card-body">Frontend renderer patch ready for review.</div><div class="drw-card-meta">2 min ago · 1.2k tokens</div></div>
+    <div class="drw-card"><div class="drw-card-head"><span class="dot" style="--c:#60a5fa"></span>NOVA</div><div class="drw-card-body">Auth flow optimization complete.</div><div class="drw-card-meta">8 min ago · 3.4k tokens</div></div>
+    <div class="drw-card"><div class="drw-card-head"><span class="dot" style="--c:#a78bfa"></span>ECHO</div><div class="drw-card-body">No completed assistant output yet.</div><div class="drw-card-meta">No output yet</div></div>
+    <div class="drw-card"><div class="drw-card-head"><span class="dot" style="--c:#f472b6"></span>JADE</div><div class="drw-card-body">Component palette draft saved.</div><div class="drw-card-meta">14 min ago · 2.1k tokens</div></div>
+  </div>
+</div>
+
+<!-- ANALYTICS drawer -->
+<div class="drawer" id="drawer-analytics">
+  <div class="drawer-head" style="--c:#a78bfa">
+    <div>
+      <div class="drawer-title">ANALYTICS</div>
+      <div class="drawer-sub">Cost, budgets, and performance intelligence.</div>
+    </div>
+    <button class="drawer-close" data-close>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drw-daterange"><span>START<br><strong>30/04</strong></span><span>END<br><strong>06/05</strong></span><button class="drw-btn small">REFRESH</button></div>
+    <div class="drw-banner">Budgets are within threshold.</div>
+    <div class="drw-grid2">
+      <div class="drw-stat"><div class="lbl">TOTAL SPEND</div><div class="num">$12.40</div><div class="sub">Selected range.</div></div>
+      <div class="drw-stat"><div class="lbl">TOTAL TOKENS</div><div class="num">142k</div><div class="sub">Input + output + cache.</div></div>
+      <div class="drw-stat"><div class="lbl">SUCCESS RATE</div><div class="num">94%</div><div class="sub">Completed runs only.</div></div>
+      <div class="drw-stat"><div class="lbl">AVG RUNTIME</div><div class="num">2.4s</div><div class="sub">Session-local run history.</div></div>
+    </div>
+    <div class="drw-section-title">BUDGET LIMITS</div>
+    <div class="drw-grid2">
+      <div class="drw-stat"><div class="lbl">DAILY USD</div><div class="num">$25</div></div>
+      <div class="drw-stat"><div class="lbl">MONTHLY USD</div><div class="num">$500</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUSTAINABILITY drawer -->
+<div class="drawer" id="drawer-sustain">
+  <div class="drawer-head" style="--c:#38bdf8">
+    <div>
+      <div class="drawer-title">INFECTION CONTROL</div>
+      <div class="drawer-sub">Hygiene, sterilization, and environmental footprint.</div>
+    </div>
+    <button class="drawer-close" data-close>✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drw-hero" style="--c:#38bdf8">
+      <div class="drw-hero-icon">💧</div>
+      <div>
+        <div class="drw-hero-num">14.3 L</div>
+        <div class="drw-hero-lbl">Water consumed today</div>
+        <div class="drw-hero-sub">≈ 95 cups · datacenter cooling estimate</div>
+      </div>
+    </div>
+    <div class="drw-bar"><div class="drw-bar-fill" style="width:62%; --c:#38bdf8"></div><span class="drw-bar-lbl">62% of daily target (23 L)</span></div>
+
+    <div class="drw-section-title">FOOTPRINT BREAKDOWN</div>
+    <div class="drw-grid2">
+      <div class="drw-stat"><div class="lbl">CO₂e</div><div class="num">38 g</div><div class="sub">Per session avg.</div></div>
+      <div class="drw-stat"><div class="lbl">ENERGY</div><div class="num">0.21 kWh</div><div class="sub">Total inference.</div></div>
+      <div class="drw-stat"><div class="lbl">PROMPTS</div><div class="num">142</div><div class="sub">Today across agents.</div></div>
+      <div class="drw-stat"><div class="lbl">AVG / PROMPT</div><div class="num">0.10 L</div><div class="sub">Water per call.</div></div>
+    </div>
+
+    <div class="drw-section-title">CASOS POR ESPECIALISTA</div>
+    <div class="drw-row"><span class="dot" style="--c:#a78bfa"></span><span>Synapse</span><div class="drw-rowbar"><div style="width:78%; background:#a78bfa"></div></div><strong>12</strong></div>
+    <div class="drw-row"><span class="dot" style="--c:#ff5e8a"></span><span>Pulso</span><div class="drw-rowbar"><div style="width:62%; background:#ff5e8a"></div></div><strong>9</strong></div>
+    <div class="drw-row"><span class="dot" style="--c:#ff7849"></span><span>Atlas</span><div class="drw-rowbar"><div style="width:42%; background:#ff7849"></div></div><strong>6</strong></div>
+    <div class="drw-row"><span class="dot" style="--c:#60a5fa"></span><span>Aire</span><div class="drw-rowbar"><div style="width:38%; background:#60a5fa"></div></div><strong>5</strong></div>
+    <div class="drw-row"><span class="dot" style="--c:#4ade80"></span><span>Vesta</span><div class="drw-rowbar"><div style="width:28%; background:#4ade80"></div></div><strong>4</strong></div>
+    <div class="drw-row"><span class="dot" style="--c:#fbbf24"></span><span>Vitrum</span><div class="drw-rowbar"><div style="width:18%; background:#fbbf24"></div></div><strong>2</strong></div>
+
+    <div class="drw-tip">💡 Switching long prompts to Haiku models can reduce water use by ~40%.</div>
+  </div>
+</div>
+
+<button id="panelToggle" class="panel-toggle panel-open" aria-label="Toggle Live Agents panel" title="Hide / Show Live Agents">‹</button>
+<aside class="panel" id="livePanel">
+  <div>
+    <h3>Team <span style="font-family: 'Geist Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 400;">openclaw / claw3d</span></h3>
+    <div class="panel-sub">live agents</div>
+  </div>
+  <div class="roster" id="roster"></div>
+
+  <div class="controls">
+    <div class="ctrl-row">
+      <label>Camera orbit</label>
+      <span class="val" id="orbitVal">0°</span>
+    </div>
+    <input type="range" id="orbit" min="-180" max="180" step="1" value="0" />
+
+    <div class="ctrl-row">
+      <label>Tilt</label>
+      <span class="val" id="tiltVal">35°</span>
+    </div>
+    <input type="range" id="tilt" min="15" max="65" step="1" value="35" />
+
+    <div class="ctrl-row">
+      <label>Zoom</label>
+      <span class="val" id="zoomVal">1.0×</span>
+    </div>
+    <input type="range" id="zoom" min="0.6" max="1.6" step="0.05" value="1" />
+
+    <div class="ctrl-row">
+      <label>Speed</label>
+      <span class="val" id="speedVal">1.0×</span>
+    </div>
+    <input type="range" id="speed" min="0.3" max="2.0" step="0.1" value="1" />
+  </div>
+</aside>
+
+<div class="toolbar-pill">
+  <span class="item"><span class="d" style="background:#4ade80; box-shadow:0 0 6px #4ade80;"></span>HQ</span>
+  <span class="sep">•</span>
+  <span class="item">drag</span>
+  <span class="sep">•</span>
+  <span class="item">scroll</span>
+  <span class="sep">•</span>
+  <span class="item">click agent</span>
+</div>
+
+<div class="hint">click roster to follow</div>
+
+<!-- Modo embed: oculta toda la UI interna cuando se carga vía iframe del wrapper Next.js. -->
+<style>
+/* Embed mode: ocultamos solo el chat fab + voice bars (duplicados con el dock Next.js).
+   Mantenemos: drawers (HEADQUARTERS/ANALYTICS/SUSTAINABILITY), tabs OFFICE/NEURAL MIND,
+   toggle 2D/3D, panel Live Agents — todo el ecosistema interactivo de la oficina. */
+body.embed .chat-fab,
+body.embed #voiceBar,
+body.embed .voice-bar,
+body.embed .voice-transcript,
+body.embed .mic-hint,
+body.embed #amModal,
+body.embed .am-modal { display: none !important; }
+body.embed { background: #08090c; }
+</style>
+<script>
+(function () {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('embed') === '1') {
+      document.documentElement.classList.add('embed');
+      document.addEventListener('DOMContentLoaded', () => document.body.classList.add('embed'));
+    }
+  } catch (e) {}
+})();
+
+window.addEventListener('message', (ev) => {
+  const msg = ev.data;
+  if (!msg || typeof msg !== 'object' || !window.__office) return;
+  try {
+    if (msg.type === 'dispatchIntent') {
+      const ag = window.__office.agentMap[msg.agentId];
+      if (ag) window.__office.dispatchIntent(ag, msg.intent, msg.opts || {});
+    } else if (msg.type === 'dispatchToAll') {
+      window.__office.dispatchToAll(msg.intent, msg.opts || {});
+    } else if (msg.type === 'getState') {
+      const state = Object.values(window.__office.agentMap).map(a => ({
+        id: a.id, name: a.name, role: a.role,
+        action: a.action, station: a.stationId, walking: !!a.walkingTo
+      }));
+      ev.source?.postMessage({ type: 'state', state }, '*');
+    }
+  } catch (e) { console.warn('[clinic iframe]', e); }
+});
+window.addEventListener('load', () => {
+  setTimeout(() => parent?.postMessage({ type: 'office-ready' }, '*'), 600);
+});
+</script>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ─── ATRIUM CLINIC ROSTER ─────────────────────────
+// IDs internos preservados (pixel/nova/...) por compat con motor 3D.
+// Mapping ID → especialista (alineado con UI Atlas):
+//   pixel → Synapse (Neurólogo)   nova  → Pulso (Cardiólogo)
+//   echo  → Atlas (Coordinador)   jade  → Aire (Neumólogo)
+//   ember → Vesta (Digestivo)     rune  → Vitrum (Anatomista)
+const AGENTS = [
+  { id: 'pixel', name: 'Synapse', role: 'Neurólogo',    color: '#a78bfa', accent: '#d4c5fa', station: 0,           action: 'type' },
+  { id: 'nova',  name: 'Pulso',   role: 'Cardiólogo',   color: '#ff5e8a', accent: '#ffb3c5', station: 1,           action: 'type' },
+  { id: 'echo',  name: 'Atlas',   role: 'Coordinador',  color: '#ff7849', accent: '#ffb38a', station: 'meeting-1', action: 'talk' },
+  { id: 'jade',  name: 'Aire',    role: 'Neumólogo',    color: '#60a5fa', accent: '#a8c8fa', station: 'meeting-2', action: 'talk' },
+  { id: 'ember', name: 'Vesta',   role: 'Digestivo',    color: '#4ade80', accent: '#a8e8c0', station: 'wander',    action: 'walk' },
+  { id: 'rune',  name: 'Vitrum',  role: 'Anatomista',   color: '#fbbf24', accent: '#fde08a', station: 'lounge',    action: 'think' },
+];
+
+// ─── THREE SETUP ──────────────────────────────────
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x1a2030, 50, 110);
+
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+const cameraState = { orbit: 0, tilt: 38, zoom: 1.0, target: new THREE.Vector3(0, 1.2, 0), targetTarget: new THREE.Vector3(0, 1.2, 0) };
+function setCamera() {
+  const angleRad = (cameraState.tilt * Math.PI) / 180;
+  const dist = 30 / cameraState.zoom;
+  const orbit = (cameraState.orbit * Math.PI) / 180;
+  camera.position.set(
+    cameraState.target.x + Math.sin(orbit) * dist * Math.cos(angleRad),
+    cameraState.target.y + Math.sin(angleRad) * dist,
+    cameraState.target.z + Math.cos(orbit) * dist * Math.cos(angleRad)
+  );
+  camera.lookAt(cameraState.target);
+}
+
+// ─── LIGHTS ───────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xd0e0ff, 1.0));
+const hemi = new THREE.HemisphereLight(0xfff0e0, 0x404868, 0.65);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xfff4e6, 1.5);
+key.position.set(12, 20, 10);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -28; key.shadow.camera.right = 28;
+key.shadow.camera.top = 28;   key.shadow.camera.bottom = -28;
+key.shadow.camera.near = 0.5; key.shadow.camera.far = 60;
+key.shadow.bias = -0.0004; key.shadow.radius = 4;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x8aa8ff, 0.55);
+fill.position.set(-10, 8, -6); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xb8e0ff, 0.45);
+rim.position.set(0, 8, -14); scene.add(rim);
+// Cool clinical fluorescent zones (hospital reskin)
+const pendantA = new THREE.PointLight(0xeaf6ff, 1.8, 14, 1.6);
+pendantA.position.set(-7, 4.2, -3); scene.add(pendantA);
+const pendantB = new THREE.PointLight(0xeaf6ff, 1.8, 14, 1.6);
+pendantB.position.set( 7, 4.2, -3); scene.add(pendantB);
+const pendantC = new THREE.PointLight(0xd9efff, 1.6, 14, 1.6);
+pendantC.position.set(-3, 4.2,  3); scene.add(pendantC);
+const pendantD = new THREE.PointLight(0xc8ecd6, 1.3, 14, 1.6);
+pendantD.position.set( 9, 4.2,  4); scene.add(pendantD);
+// Cool back light from server room
+const serverGlow = new THREE.PointLight(0x60a5fa, 1.4, 16, 1.8);
+serverGlow.position.set(-12, 3, -7); scene.add(serverGlow);
+
+// ─── OFFICE / FLOOR ───────────────────────────────
+// Bigger HQ: 28 x 20 tile footprint, with structured zones around the original
+// desk/lounge/meeting positions (which sit roughly in -10..10 x -5..6 in world units).
+const TILE = 1.4;
+const ROOM_W = 28, ROOM_D = 20;
+const office = new THREE.Group();
+scene.add(office);
+
+// World-unit half-extents (used everywhere): WX=19.6, WZ=14
+const WX = ROOM_W * TILE / 2;   // 19.6
+const WZ = ROOM_D * TILE / 2;   // 14
+const WALL_H = 6.0;
+const WALL_T = 0.3;
+
+// Floor: warm wood-look planks running along X (each plank = full width × 0.7 deep)
+const plankMatA = new THREE.MeshStandardMaterial({ color: 0xd9dde2, roughness: 0.32, metalness: 0.0 });
+const plankMatB = new THREE.MeshStandardMaterial({ color: 0xe2e6eb, roughness: 0.32, metalness: 0.0 });
+const plankMatC = new THREE.MeshStandardMaterial({ color: 0xcfd4dc, roughness: 0.32, metalness: 0.0 });
+const plankMats = [plankMatA, plankMatB, plankMatC];
+const plankD = 0.7;
+const plankCount = Math.ceil((ROOM_D * TILE) / plankD);
+for (let i = 0; i < plankCount; i++) {
+  const z = -WZ + i * plankD + plankD / 2;
+  const plank = new THREE.Mesh(
+    new THREE.BoxGeometry(ROOM_W * TILE, 0.12, plankD * 0.98),
+    plankMats[i % 3]
+  );
+  plank.position.set(0, -0.06, z);
+  plank.receiveShadow = true;
+  office.add(plank);
+}
+
+// Subtle floor accent grid (thin emissive lines along plank seams every 5 planks)
+const seamMat = new THREE.MeshBasicMaterial({ color: 0x8b95a2, transparent: true, opacity: 0.55 });
+for (let i = 0; i <= plankCount; i += 5) {
+  const z = -WZ + i * plankD;
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W * TILE, 0.005, 0.02), seamMat);
+  seam.position.set(0, 0.001, z);
+  office.add(seam);
+}
+
+// ─── WALLS ─────────────────────────────────────────
+const wallMat = new THREE.MeshStandardMaterial({ color: 0xe6ecec, roughness: 0.85 });
+const wallAccent = new THREE.MeshStandardMaterial({ color: 0xc4d5d9, roughness: 0.82 });
+const wallTrim = new THREE.MeshStandardMaterial({ color: 0x6b7884, roughness: 0.7 });
+const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+
+function addWall(w, h, d, x, y, z, mat = wallMat) {
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  wall.position.set(x, y, z);
+  wall.receiveShadow = true; wall.castShadow = true;
+  office.add(wall);
+  return wall;
+}
+
+// Back wall (solid sections + window slots)
+// Build as 5 panels separated by 4 windows
+const backZ = -WZ - WALL_T / 2;
+const backPanelW = 1.6;        // pier width between windows
+const backWindowW = 4.0;       // each window pane width
+// Back wall total = 5 piers (8) + 4 windows (16) = 24, but room is 39.2 wide.
+// Solve: piers fixed at backPanelW, windows fill the rest equally.
+const backPiers = 5;
+const backWindows = 4;
+const backTotalW = ROOM_W * TILE;
+const remainingW = backTotalW - backPiers * backPanelW;
+const winW = remainingW / backWindows;
+// Lay out left → right
+let cursor = -backTotalW / 2;
+for (let i = 0; i < backPiers; i++) {
+  // Pier (full height)
+  addWall(backPanelW, WALL_H, WALL_T, cursor + backPanelW / 2, WALL_H / 2, backZ);
+  cursor += backPanelW;
+  if (i < backWindows) {
+    // Top header above window
+    addWall(winW, 1.2, WALL_T, cursor + winW / 2, WALL_H - 0.6, backZ, wallAccent);
+    // Sill below window
+    addWall(winW, 0.9, WALL_T, cursor + winW / 2, 0.45, backZ, wallAccent);
+    // Window glass (emissive sky)
+    const win = new THREE.Mesh(
+      new THREE.BoxGeometry(winW - 0.1, WALL_H - 2.1, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x8fc8ff, emissive: 0x6fb0ff, emissiveIntensity: 0.85, roughness: 0.2, metalness: 0.5 })
+    );
+    win.position.set(cursor + winW / 2, 0.9 + (WALL_H - 2.1) / 2, backZ + 0.04);
+    office.add(win);
+    // Mullion (vertical center)
+    const mull = new THREE.Mesh(new THREE.BoxGeometry(0.08, WALL_H - 2.1, 0.1), wallTrim);
+    mull.position.set(cursor + winW / 2, 0.9 + (WALL_H - 2.1) / 2, backZ + 0.06);
+    office.add(mull);
+    // Mullion (horizontal mid)
+    const mullH = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.1, 0.08, 0.1), wallTrim);
+    mullH.position.set(cursor + winW / 2, 0.9 + (WALL_H - 2.1) / 2, backZ + 0.06);
+    office.add(mullH);
+    // Distant skyline silhouette (a few dark boxes behind window)
+    if (i === 0 || i === 3) {
+      for (let k = 0; k < 4; k++) {
+        const tower = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6 + Math.random() * 0.7, 1.5 + Math.random() * 2.2, 0.4),
+          new THREE.MeshBasicMaterial({ color: 0x202840 })
+        );
+        tower.position.set(cursor + 0.5 + k * 0.9, 1.5 + Math.random() * 0.8, backZ - 1.6);
+        office.add(tower);
+      }
+    }
+    cursor += winW;
+  }
+}
+
+// Front wall (open partial — only end pieces, leaves middle "removed" so iso view stays open)
+addWall(ROOM_W * TILE * 0.18, WALL_H, WALL_T, -WX + ROOM_W * TILE * 0.09, WALL_H / 2,  WZ + WALL_T / 2);
+addWall(ROOM_W * TILE * 0.18, WALL_H, WALL_T,  WX - ROOM_W * TILE * 0.09, WALL_H / 2,  WZ + WALL_T / 2);
+
+// Left wall (solid)
+addWall(WALL_T, WALL_H, ROOM_D * TILE, -WX - WALL_T / 2, WALL_H / 2, 0);
+// Right wall (solid)
+addWall(WALL_T, WALL_H, ROOM_D * TILE,  WX + WALL_T / 2, WALL_H / 2, 0);
+
+// Baseboard trim along all walls (interior face)
+const baseH = 0.18;
+addWall(ROOM_W * TILE, baseH, 0.06, 0, baseH / 2, -WZ + 0.04, baseboardMat);
+addWall(ROOM_W * TILE, baseH, 0.06, 0, baseH / 2,  WZ - 0.04, baseboardMat);
+addWall(0.06, baseH, ROOM_D * TILE, -WX + 0.04, baseH / 2, 0, baseboardMat);
+addWall(0.06, baseH, ROOM_D * TILE,  WX - 0.04, baseH / 2, 0, baseboardMat);
+
+// Crown molding (top trim on long walls)
+addWall(ROOM_W * TILE, 0.12, 0.1, 0, WALL_H - 0.06, -WZ + 0.05, wallTrim);
+addWall(0.1, 0.12, ROOM_D * TILE, -WX + 0.05, WALL_H - 0.06, 0, wallTrim);
+addWall(0.1, 0.12, ROOM_D * TILE,  WX - 0.05, WALL_H - 0.06, 0, wallTrim);
+
+// ─── CEILING ───────────────────────────────────────
+// (No solid ceiling plane — would block the isometric camera looking down.
+//  Beams + pendant cords below provide the "ceiling rig" read.)
+
+// Ceiling beams (cross-grid for industrial look)
+const beamMat = new THREE.MeshStandardMaterial({ color: 0x2a2f40, roughness: 0.7 });
+for (let i = -2; i <= 2; i++) {
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W * TILE - 0.6, 0.18, 0.18), beamMat);
+  beam.position.set(0, WALL_H - 0.12, i * 4);
+  office.add(beam);
+}
+for (let i = -3; i <= 3; i++) {
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, ROOM_D * TILE - 0.4), beamMat);
+  beam.position.set(i * 5, WALL_H - 0.18, 0);
+  office.add(beam);
+}
+
+// Pendant lights (cones hanging from ceiling)
+function makePendant(x, z, c) {
+  const cordMat = new THREE.MeshStandardMaterial({ color: 0x111419 });
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.4, 6), cordMat);
+  cord.position.set(x, WALL_H - 0.7, z);
+  office.add(cord);
+  const shadeMat = new THREE.MeshStandardMaterial({
+    color: 0xeae0d0, emissive: c, emissiveIntensity: 0.7, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide
+  });
+  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.55, 16, 1, true), shadeMat);
+  shade.position.set(x, WALL_H - 1.4, z);
+  shade.rotation.x = Math.PI; // open downward
+  office.add(shade);
+  // Bulb
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.14, 12, 10),
+    new THREE.MeshBasicMaterial({ color: c })
+  );
+  bulb.position.set(x, WALL_H - 1.55, z);
+  office.add(bulb);
+}
+makePendant(-7, -3, 0xeaf6ff);
+makePendant( 7, -3, 0xeaf6ff);
+makePendant(-3,  3, 0xd9efff);
+makePendant( 9,  4, 0xc8ecd6);
+makePendant(-12, 4, 0xeaf6ff);
+makePendant( 0, -3, 0xeaf6ff);
+
+// Long LED strips above desk row
+const ledStripMat = new THREE.MeshBasicMaterial({ color: 0xf0faff });
+for (let i = 0; i < 2; i++) {
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(ROOM_W * TILE * 0.55, 0.04, 0.12), ledStripMat);
+  strip.position.set(0, WALL_H - 0.32, -3 + i * 0.6);
+  office.add(strip);
+}
+
+// ─── ZONE FLOOR INSETS / RUGS ──────────────────────
+// Lounge rug
+const carpet = new THREE.Mesh(
+  new THREE.BoxGeometry(5.0, 0.04, 5.0),
+  new THREE.MeshStandardMaterial({ color: 0x3a1f3c, roughness: 0.95 })
+);
+carpet.position.set(7.5, 0.02, 4);
+carpet.receiveShadow = true;
+office.add(carpet);
+// Rug border
+const carpetBorder = new THREE.Mesh(
+  new THREE.BoxGeometry(5.4, 0.03, 5.4),
+  new THREE.MeshStandardMaterial({ color: 0x5a2f5e, roughness: 0.95 })
+);
+carpetBorder.position.set(7.5, 0.015, 4);
+office.add(carpetBorder);
+
+// Conference room floor inset (lighter "boardroom" tile)
+const meetFloor = new THREE.Mesh(
+  new THREE.BoxGeometry(5.5, 0.04, 5.5),
+  new THREE.MeshStandardMaterial({ color: 0x252b3a, roughness: 0.85 })
+);
+meetFloor.position.set(-3, 0.02, 3);
+office.add(meetFloor);
+
+// Dev pit accent strip behind desks
+const pitStrip = new THREE.Mesh(
+  new THREE.BoxGeometry(20, 0.04, 0.18),
+  new THREE.MeshStandardMaterial({ color: 0xe53935, emissive: 0xe53935, emissiveIntensity: 0.55 })
+);
+pitStrip.position.set(0, 0.025, -4.4);
+office.add(pitStrip);
+
+// ─── BACK WALL DECORATIONS ─────────────────────────
+// Logo on left side wall (existing, brighter)
+const logoBack = new THREE.Group();
+const crossMat = new THREE.MeshStandardMaterial({ color: 0xff3b3b, emissive: 0xff3b3b, emissiveIntensity: 0.95 });
+const crossH = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.7), crossMat);
+const crossV = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.4), crossMat);
+logoBack.add(crossH); logoBack.add(crossV);
+logoBack.position.set(-WX + 0.18, 3.6, 8);
+logoBack.rotation.y = Math.PI / 2;
+office.add(logoBack);
+
+// LUKE neon wordmark on right wall (above lounge)
+function makeNeonChar(letter, x, y, z) {
+  // Simple glowing letter via emissive box (stylized)
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(0.65, 0.9, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0xfff, emissive: 0xff3b3b, emissiveIntensity: 1.4 })
+  );
+  m.position.set(x, y, z); m.rotation.y = -Math.PI / 2;
+  office.add(m);
+  return m;
+}
+// Spell L U K E along right wall
+['L','U','K','E'].forEach((c, i) => {
+  makeNeonChar(c, WX - 0.14, 4.5, -2 + i * 0.85);
+});
+// Subtle glowing horizontal accent below the wordmark
+const neonBar = new THREE.Mesh(
+  new THREE.BoxGeometry(0.04, 0.06, 4.0),
+  new THREE.MeshBasicMaterial({ color: 0xff3b3b })
+);
+neonBar.position.set(WX - 0.16, 3.85, 0);
+office.add(neonBar);
+
+// Big standup display on left wall (above conference)
+const standupDisp = new THREE.Mesh(
+  new THREE.PlaneGeometry(3.6, 2.0),
+  new THREE.MeshStandardMaterial({ color: 0x0a0d14, emissive: 0x60a5fa, emissiveIntensity: 0.4 })
+);
+standupDisp.position.set(-WX + 0.16, 3.4, -3);
+standupDisp.rotation.y = Math.PI / 2;
+office.add(standupDisp);
+// Display frame
+const standupFrame = new THREE.Mesh(
+  new THREE.BoxGeometry(0.06, 2.2, 3.8),
+  wallTrim
+);
+standupFrame.position.set(-WX + 0.13, 3.4, -3);
+office.add(standupFrame);
+// "scrolling code" stripes on display (clamped inside the 3.6 × 2.0 frame)
+const dispW = 3.6, dispH = 2.0;
+const dispCX = -3, dispCY = 3.4;     // display center (z, y)
+const padW = 0.18, padH = 0.18;       // inner padding from frame
+for (let i = 0; i < 8; i++) {
+  const lineH = 0.14;
+  const maxLineW = dispW - padW * 2;        // 3.24
+  const lineW = 0.6 + Math.random() * (maxLineW - 0.6);
+  // y position: stack 8 rows evenly inside the inner area
+  const innerH = dispH - padH * 2;          // 1.64
+  const rowH = innerH / 8;                  // 0.205
+  const localY = -innerH / 2 + (i + 0.5) * rowH;   // centered around dispCY
+  // z position: random within remaining horizontal slack
+  const slack = (maxLineW - lineW) / 2;
+  const localZ = (Math.random() * 2 - 1) * slack;
+  const line = new THREE.Mesh(
+    new THREE.PlaneGeometry(lineW, lineH * 0.7),
+    new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0x60a5fa : (i % 3 === 1 ? 0x4ade80 : 0xff7849) })
+  );
+  line.position.set(-WX + 0.18, dispCY + localY, dispCX + localZ);
+  line.rotation.y = Math.PI / 2;
+  office.add(line);
+}
+
+// ─── SERVER / DATA ROOM (back-left corner, behind glass) ─────
+const serverRoom = new THREE.Group();
+serverRoom.position.set(-15, 0, -9);
+office.add(serverRoom);
+// Glass partition (front face of server room)
+const glassMat = new THREE.MeshStandardMaterial({
+  color: 0x8fbfff, emissive: 0x4070a0, emissiveIntensity: 0.15,
+  transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0.6
+});
+const serverGlass = new THREE.Mesh(new THREE.BoxGeometry(8.5, 4.2, 0.08), glassMat);
+serverGlass.position.set(0, 2.1, 4); serverRoom.add(serverGlass);
+// Frame
+const serverFrameTop = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.12, 0.14), wallTrim);
+serverFrameTop.position.set(0, 4.2, 4); serverRoom.add(serverFrameTop);
+const serverFrameBot = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.12, 0.14), wallTrim);
+serverFrameBot.position.set(0, 0.06, 4); serverRoom.add(serverFrameBot);
+const serverFrameL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.2, 0.14), wallTrim);
+serverFrameL.position.set(-4.25, 2.1, 4); serverRoom.add(serverFrameL);
+const serverFrameR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.2, 0.14), wallTrim);
+serverFrameR.position.set( 4.25, 2.1, 4); serverRoom.add(serverFrameR);
+// Server racks (4 of them) with pulsing LED columns
+const serverLEDs = [];
+for (let r = 0; r < 4; r++) {
+  const rack = new THREE.Group();
+  rack.position.set(-3 + r * 2, 0, 1.2);
+  serverRoom.add(rack);
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 3.4, 1.2),
+    new THREE.MeshStandardMaterial({ color: 0x14181f, roughness: 0.6, metalness: 0.4 })
+  );
+  body.position.y = 1.7; body.castShadow = true; body.receiveShadow = true;
+  rack.add(body);
+  // LED column on the front
+  for (let row = 0; row < 12; row++) {
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.05, 0.04),
+      new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+    );
+    led.position.set(-0.55, 0.3 + row * 0.26, 0.62);
+    rack.add(led);
+    serverLEDs.push({ mesh: led, phase: Math.random() * 6.28 });
+  }
+  // Front "screen" on rack
+  const rackScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.6, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x60a5fa, emissiveIntensity: 0.7 })
+  );
+  rackScreen.position.set(0.2, 2.6, 0.61);
+  rack.add(rackScreen);
+}
+// "DATA CENTER" sign on glass
+const serverSign = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.4, 0.36),
+  new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.85 })
+);
+serverSign.position.set(0, 3.6, 4.06);
+serverRoom.add(serverSign);
+
+// ─── KITCHENETTE (back-right corner) ──────────────
+const kitchen = new THREE.Group();
+kitchen.position.set(13, 0, -10);
+office.add(kitchen);
+// Counter (long wood top with dark base)
+const counterTop = new THREE.Mesh(
+  new THREE.BoxGeometry(7.0, 0.1, 1.4),
+  new THREE.MeshStandardMaterial({ color: 0x2a3142, roughness: 0.4, metalness: 0.4 })
+);
+counterTop.position.set(0, 0.9, 0); counterTop.castShadow = true; counterTop.receiveShadow = true;
+kitchen.add(counterTop);
+const counterBase = new THREE.Mesh(
+  new THREE.BoxGeometry(7.0, 0.85, 1.3),
+  new THREE.MeshStandardMaterial({ color: 0x1a1f2c, roughness: 0.7 })
+);
+counterBase.position.set(0, 0.42, 0); kitchen.add(counterBase);
+// Cabinet panel lines
+for (let i = -2; i <= 2; i++) {
+  const ln = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 1.32), new THREE.MeshStandardMaterial({ color: 0x0e1118 }));
+  ln.position.set(i * 1.2, 0.42, 0); kitchen.add(ln);
+}
+// Espresso machine
+const espressoBase = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 0.5, 0.5),
+  new THREE.MeshStandardMaterial({ color: 0x141822, roughness: 0.4, metalness: 0.6 })
+);
+espressoBase.position.set(-2.5, 1.2, 0); kitchen.add(espressoBase);
+const espressoTop = new THREE.Mesh(
+  new THREE.BoxGeometry(0.6, 0.18, 0.45),
+  new THREE.MeshStandardMaterial({ color: 0xff7849, emissive: 0xff7849, emissiveIntensity: 0.5 })
+);
+espressoTop.position.set(-2.5, 1.55, 0); kitchen.add(espressoTop);
+// Mugs along counter
+for (let i = 0; i < 4; i++) {
+  const mug = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 0.14, 10),
+    new THREE.MeshStandardMaterial({ color: [0xff7849, 0x60a5fa, 0xfbbf24, 0x4ade80][i] })
+  );
+  mug.position.set(-1.4 + i * 0.3, 1.02, 0.3); kitchen.add(mug);
+}
+// Fridge
+const fridge = new THREE.Mesh(
+  new THREE.BoxGeometry(1.0, 2.2, 0.95),
+  new THREE.MeshStandardMaterial({ color: 0xe8e8ec, roughness: 0.4, metalness: 0.6 })
+);
+fridge.position.set(2.8, 1.1, 0); fridge.castShadow = true; kitchen.add(fridge);
+// Fridge handle
+const fridgeHandle = new THREE.Mesh(
+  new THREE.BoxGeometry(0.05, 0.5, 0.06),
+  new THREE.MeshStandardMaterial({ color: 0x1a1f2c })
+);
+fridgeHandle.position.set(2.3, 1.5, 0.5); kitchen.add(fridgeHandle);
+// Microwave on counter
+const micro = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 0.4, 0.45),
+  new THREE.MeshStandardMaterial({ color: 0x1a1f2c, roughness: 0.4, metalness: 0.5 })
+);
+micro.position.set(0.5, 1.15, 0); kitchen.add(micro);
+const microScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.18, 0.08),
+  new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+);
+microScreen.position.set(0.7, 1.18, 0.226); kitchen.add(microScreen);
+// Bar stools facing counter
+for (let i = -1; i <= 1; i++) {
+  const stool = new THREE.Group();
+  stool.position.set(i * 1.2, 0, 1.4); kitchen.add(stool);
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.08, 12), new THREE.MeshStandardMaterial({ color: 0xff7849 }));
+  seat.position.y = 0.85; stool.add(seat);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.85, 8), new THREE.MeshStandardMaterial({ color: 0x0e1118 }));
+  post.position.y = 0.42; stool.add(post);
+  const baseS = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 12), new THREE.MeshStandardMaterial({ color: 0x0e1118 }));
+  baseS.position.y = 0.02; stool.add(baseS);
+}
+
+// ─── PING PONG TABLE (back-right of dev pit) ──────
+const pingPong = new THREE.Group();
+pingPong.position.set(13, 0, -3.5);
+office.add(pingPong);
+const ppTop = new THREE.Mesh(
+  new THREE.BoxGeometry(2.7, 0.06, 1.5),
+  new THREE.MeshStandardMaterial({ color: 0x1a4d3a, roughness: 0.7 })
+);
+ppTop.position.y = 0.85; ppTop.castShadow = ppTop.receiveShadow = true; pingPong.add(ppTop);
+// White lines
+const ppLine1 = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.005, 0.04), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+ppLine1.position.set(0, 0.885, 0); pingPong.add(ppLine1);
+const ppLine2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.005, 1.5), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+ppLine2.position.set(0, 0.885, 0); pingPong.add(ppLine2);
+// Net
+const ppNet = new THREE.Mesh(
+  new THREE.BoxGeometry(0.04, 0.18, 1.5),
+  new THREE.MeshStandardMaterial({ color: 0x222731, roughness: 0.9 })
+);
+ppNet.position.set(0, 0.96, 0); pingPong.add(ppNet);
+// Legs
+[[-1.2, -0.55],[1.2, -0.55],[-1.2, 0.55],[1.2, 0.55]].forEach(([dx, dz]) => {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.85, 0.06), new THREE.MeshStandardMaterial({ color: 0x0e1118 }));
+  leg.position.set(dx, 0.42, dz); pingPong.add(leg);
+});
+// Paddles on table
+const paddle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xff5e8a }));
+paddle1.rotation.x = Math.PI / 2; paddle1.position.set(-1.0, 0.9, 0.5); pingPong.add(paddle1);
+const paddle2 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0x1a1f2c }));
+paddle2.rotation.x = Math.PI / 2; paddle2.position.set(1.0, 0.9, -0.5); pingPong.add(paddle2);
+// Ball
+const ppBall = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), new THREE.MeshBasicMaterial({ color: 0xfff8c8 }));
+ppBall.position.set(0.3, 0.92, 0.2); pingPong.add(ppBall);
+
+// ─── WHITEBOARD (in conference area, on back wall of glass meeting room) ─
+const whiteboard = new THREE.Mesh(
+  new THREE.PlaneGeometry(3.0, 1.6),
+  new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.8 })
+);
+whiteboard.position.set(-3, 1.7, -0.05);
+whiteboard.rotation.y = Math.PI;
+office.add(whiteboard);
+const wbFrame = new THREE.Mesh(
+  new THREE.BoxGeometry(3.2, 1.8, 0.06),
+  wallTrim
+);
+wbFrame.position.set(-3, 1.7, -0.02);
+office.add(wbFrame);
+// Sketches on whiteboard (colored boxes/lines)
+const sketches = [
+  { x: -1.0, y: 2.2, w: 0.6, h: 0.4, c: 0xff7849 },
+  { x: -0.1, y: 2.2, w: 0.6, h: 0.4, c: 0x60a5fa },
+  { x:  0.8, y: 2.2, w: 0.6, h: 0.4, c: 0x4ade80 },
+  { x: -0.5, y: 1.4, w: 1.6, h: 0.05, c: 0xa78bfa },
+  { x:  0.6, y: 1.6, w: 0.6, h: 0.05, c: 0xfbbf24 },
+  { x: -1.1, y: 1.7, w: 0.05, h: 0.5, c: 0xff5e8a },
+];
+sketches.forEach(s => {
+  const sk = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.h), new THREE.MeshBasicMaterial({ color: s.c }));
+  sk.position.set(-3 + s.x, s.y, -0.07);
+  sk.rotation.y = Math.PI;
+  office.add(sk);
+});
+
+// ─── GLASS MEETING ROOM PARTITION (around conference table) ─
+// Glass walls forming an L on the open sides (front+left of conference area)
+const meetGlassMat = new THREE.MeshStandardMaterial({
+  color: 0xb0d8ff, emissive: 0x4070a0, emissiveIntensity: 0.1,
+  transparent: true, opacity: 0.14, roughness: 0.05, metalness: 0.6
+});
+// Front partition (south of table, with gap for door)
+const meetFrontL = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.2, 0.06), meetGlassMat);
+meetFrontL.position.set(-4.6, 1.6, 5.6); office.add(meetFrontL);
+const meetFrontR = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.2, 0.06), meetGlassMat);
+meetFrontR.position.set(-1.6, 1.6, 5.6); office.add(meetFrontR);
+// Right partition (east of table)
+const meetSide = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3.2, 5.4), meetGlassMat);
+meetSide.position.set(-0.4, 1.6, 3); office.add(meetSide);
+// Frame top (front)
+const meetTopF = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.08, 0.1), wallTrim);
+meetTopF.position.set(-3, 3.2, 5.6); office.add(meetTopF);
+// Frame top (side)
+const meetTopS = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 5.4), wallTrim);
+meetTopS.position.set(-0.4, 3.2, 3); office.add(meetTopS);
+// Vertical frames
+const mfV1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.1), wallTrim);
+mfV1.position.set(-5.6, 1.6, 5.6); office.add(mfV1);
+const mfV2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.1), wallTrim);
+mfV2.position.set(-0.4, 1.6, 5.6); office.add(mfV2);
+const mfV3 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.1), wallTrim);
+mfV3.position.set(-0.4, 1.6, 0.3); office.add(mfV3);
+
+// ─── RECEPTION DESK (front-center) ────────────────
+const reception = new THREE.Group();
+reception.position.set(0, 0, 11.5);
+office.add(reception);
+const recBase = new THREE.Mesh(
+  new THREE.BoxGeometry(3.2, 1.1, 0.9),
+  new THREE.MeshStandardMaterial({ color: 0xff7849, roughness: 0.6 })
+);
+recBase.position.y = 0.55; recBase.castShadow = true; reception.add(recBase);
+const recTop = new THREE.Mesh(
+  new THREE.BoxGeometry(3.4, 0.08, 1.1),
+  new THREE.MeshStandardMaterial({ color: 0x2a3142, roughness: 0.5, metalness: 0.3 })
+);
+recTop.position.y = 1.14; reception.add(recTop);
+// Reception sign behind
+const recSign = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.2, 0.36),
+  new THREE.MeshBasicMaterial({ color: 0xff7849 })
+);
+recSign.position.set(0, 1.7, -0.1); recSign.rotation.y = Math.PI;
+reception.add(recSign);
+// Reception monitor
+const recMon = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 0.4, 0.04),
+  new THREE.MeshStandardMaterial({ color: 0x0a0c12 })
+);
+recMon.position.set(0, 1.45, 0.2); reception.add(recMon);
+const recScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.65, 0.36),
+  new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x4ade80, emissiveIntensity: 0.7 })
+);
+recScreen.position.set(0, 1.45, 0.225); reception.add(recScreen);
+
+// ─── BOOKSHELF (left mid-wall) ────────────────────
+const shelf = new THREE.Group();
+shelf.position.set(-WX + 0.5, 0, -8);
+office.add(shelf);
+const shelfBody = new THREE.Mesh(
+  new THREE.BoxGeometry(0.5, 3.2, 2.4),
+  new THREE.MeshStandardMaterial({ color: 0x2a1f12, roughness: 0.85 })
+);
+shelfBody.position.y = 1.6; shelfBody.castShadow = true; shelf.add(shelfBody);
+// Books per shelf
+for (let row = 0; row < 4; row++) {
+  for (let col = 0; col < 8; col++) {
+    const colors = [0xff7849, 0x60a5fa, 0xa78bfa, 0x4ade80, 0xfbbf24, 0xff5e8a, 0xeae0d0];
+    const book = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.35 + Math.random() * 0.12, 0.18),
+      new THREE.MeshStandardMaterial({ color: colors[Math.floor(Math.random() * colors.length)], roughness: 0.85 })
+    );
+    book.position.set(0.05, 0.4 + row * 0.7, -1.05 + col * 0.27);
+    shelf.add(book);
+  }
+}
+
+// ─── PLANTS (more variety, taller monsteras) ──────
+function makePlant(x, z, scale = 1.0, big = false) {
+  const grp = new THREE.Group();
+  grp.position.set(x, 0, z);
+  grp.scale.setScalar(scale);
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.32, 0.24, 0.55, 10),
+    new THREE.MeshStandardMaterial({ color: 0x2a1f1a, roughness: 0.7 })
+  );
+  pot.position.y = 0.27; pot.castShadow = true;
+  grp.add(pot);
+  // Trunk for big plants
+  if (big) {
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.07, 1.2, 8),
+      new THREE.MeshStandardMaterial({ color: 0x3a2418, roughness: 0.85 })
+    );
+    trunk.position.y = 1.05; grp.add(trunk);
+  }
+  const leafColors = [0x2d6e54, 0x3a8466, 0x255a44, 0x3f9e72];
+  const layers = big ? 5 : 3;
+  for (let i = 0; i < layers; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4 - i * 0.04, 8, 6),
+      new THREE.MeshStandardMaterial({ color: leafColors[i % 4], flatShading: true, roughness: 0.7 })
+    );
+    leaf.position.set((Math.random() - 0.5) * 0.4, big ? 1.7 + i * 0.18 : 0.7 + i * 0.18, (Math.random() - 0.5) * 0.4);
+    leaf.scale.set(1, 0.85, 1);
+    leaf.castShadow = true;
+    grp.add(leaf);
+  }
+  office.add(grp);
+}
+// Corner monsteras
+makePlant(-WX + 1.0,  WZ - 1.0, 1.4, true);
+makePlant( WX - 1.0, -WZ + 1.2, 1.4, true);
+makePlant(-WX + 1.0, -WZ + 1.2, 1.2, true);
+makePlant( WX - 1.0,  WZ - 1.0, 1.4, true);
+// Mid-room plants
+makePlant(-WX + 1.2, 0, 1.0, false);
+makePlant( WX - 1.2, 9, 1.1, false);
+makePlant(-1, 9, 0.9, false);
+makePlant(11, -7, 1.0, false);
+
+// ─── FLOOR DECALS / ZONE LABELS ───────────────────
+function makeFloorLabel(text, x, z, color, w = 2.4) {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 64;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0)'; ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = color;
+  ctx.font = 'bold 28px Geist Mono, monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.55;
+  ctx.fillText(text, 128, 32);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, w * 64 / 256),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(x, 0.04, z);
+  office.add(m);
+}
+makeFloorLabel('— EMERGENCY —', 0, -5.5, '#ff7849', 4.0);
+makeFloorLabel('· WAITING ROOM ·', 7.5, 6.6, '#a78bfa', 2.8);
+makeFloorLabel('OPERATING ROOM', -3, 5.9, '#60a5fa', 2.8);
+makeFloorLabel('PHARMACY', 13, -8.6, '#4ade80', 2.4);
+makeFloorLabel('LABORATORY', -15, -4.6, '#60a5fa', 2.8);
+makeFloorLabel('▼ RECEPTION ▼', 0, 10.0, '#fbbf24', 3.0);
+
+// ─── CLEANING ROBOT (slow wanderer for life) ──────
+const roomba = new THREE.Group();
+const roomBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.35, 0.35, 0.12, 24),
+  new THREE.MeshStandardMaterial({ color: 0x14181f, roughness: 0.5, metalness: 0.5 })
+);
+roomBody.position.y = 0.06; roomBody.castShadow = true;
+roomba.add(roomBody);
+const roomTop = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.25, 0.25, 0.04, 16),
+  new THREE.MeshStandardMaterial({ color: 0xff7849, emissive: 0xff7849, emissiveIntensity: 0.6 })
+);
+roomTop.position.y = 0.13; roomba.add(roomTop);
+roomba.position.set(5, 0, 8);
+office.add(roomba);
+const roombaState = { angle: Math.random() * Math.PI * 2, t: 0 };
+
+// ─── DESK BUILDER ─────────────────────────────────
+function buildDesk(x, z, rotY = 0, accentColor = 0xff7849) {
+  const grp = new THREE.Group();
+  grp.position.set(x, 0, z);
+  grp.rotation.y = rotY;
+
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.08, 0.95),
+    new THREE.MeshStandardMaterial({ color: 0xeef2f6, roughness: 0.65, metalness: 0.05, flatShading: true })
+  );
+  top.position.y = 0.85; top.castShadow = top.receiveShadow = true;
+  grp.add(top);
+
+  [[-1, -0.4],[1, -0.4],[-1, 0.4],[1, 0.4]].forEach(([dx, dz]) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.85, 0.06), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+    leg.position.set(dx, 0.42, dz);
+    leg.castShadow = true;
+    grp.add(leg);
+  });
+
+  // Vital signs monitor (boxy hospital style)
+  const mon = new THREE.Mesh(
+    new THREE.BoxGeometry(1.05, 0.75, 0.18),
+    new THREE.MeshStandardMaterial({ color: 0xe2e7ec, roughness: 0.55, metalness: 0.2 })
+  );
+  mon.position.set(0, 1.45, -0.3);
+  grp.add(mon);
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.92, 0.6),
+    new THREE.MeshStandardMaterial({ color: 0x041318, emissive: 0x14ff7c, emissiveIntensity: 0.7 })
+  );
+  screen.position.set(0, 1.45, -0.205);
+  grp.add(screen);
+  // Small status LEDs on the bezel
+  for (let i = 0; i < 3; i++) {
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.04, 0.02),
+      new THREE.MeshBasicMaterial({ color: [0x14ff7c, 0xff5e5e, 0x60a5fa][i] })
+    );
+    led.position.set(0.42, 1.65 - i * 0.08, -0.205);
+    grp.add(led);
+  }
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, 0.14), new THREE.MeshStandardMaterial({ color: 0xc8d2dd }));
+  stand.position.set(0, 1.0, -0.3);
+  grp.add(stand);
+
+  // Keyboard
+  const kb = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 0.04, 0.25),
+    new THREE.MeshStandardMaterial({ color: 0xd6dde5, roughness: 0.6 })
+  );
+  kb.position.set(0, 0.92, 0.15);
+  grp.add(kb);
+
+  // Keys (for typing flicker)
+  const keys = [];
+  for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < 2; j++) {
+      const k = new THREE.Mesh(
+        new THREE.BoxGeometry(0.09, 0.02, 0.09),
+        new THREE.MeshStandardMaterial({ color: accentColor, emissive: accentColor, emissiveIntensity: 0 })
+      );
+      k.position.set(-0.3 + i * 0.15, 0.945, 0.08 + j * 0.1);
+      grp.add(k);
+      keys.push(k);
+    }
+  }
+
+  // Chair (clinical stool-look in light teal)
+  const chair = new THREE.Group();
+  chair.position.set(0, 0, 0.7);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), new THREE.MeshStandardMaterial({ color: 0x4fc5d9 }));
+  seat.position.y = 0.5; seat.castShadow = true;
+  chair.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.1), new THREE.MeshStandardMaterial({ color: 0x4fc5d9 }));
+  back.position.set(0, 0.95, 0.32); back.castShadow = true;
+  chair.add(back);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+  post.position.y = 0.25;
+  chair.add(post);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 8), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+  base.position.y = 0.03;
+  chair.add(base);
+  grp.add(chair);
+
+  office.add(grp);
+  return { group: grp, screen, keys };
+}
+
+// Two desk rows (4 desks)
+const desks = [];
+desks.push(buildDesk(-7,  -3, 0, 0xff7849));    // Pixel
+desks.push(buildDesk(-3,  -3, 0, 0x60a5fa));    // Nova
+desks.push(buildDesk( 3,  -3, 0, 0xfbbf24));    // empty
+desks.push(buildDesk( 7,  -3, 0, 0xa78bfa));    // empty
+
+// ─── CONFERENCE TABLE ─────────────────────────────
+const table = new THREE.Group();
+table.position.set(-3, 0, 3);
+office.add(table);
+// Operating table — long padded surface
+const tableTop = new THREE.Mesh(
+  new THREE.BoxGeometry(2.4, 0.16, 0.9),
+  new THREE.MeshStandardMaterial({ color: 0xf5f7fa, roughness: 0.45, metalness: 0.1 })
+);
+tableTop.position.y = 0.95; tableTop.castShadow = tableTop.receiveShadow = true;
+table.add(tableTop);
+// Mattress sectional joints (head + body + legs)
+[-0.85, 0, 0.85].forEach((dx) => {
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.92), new THREE.MeshStandardMaterial({ color: 0xc7d2dd }));
+  seam.position.set(dx, 0.95, 0);
+  table.add(seam);
+});
+// Pillow
+const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.7), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }));
+pillow.position.set(-1.0, 1.08, 0); pillow.castShadow = true;
+table.add(pillow);
+// Stainless steel base + post
+const tablePost = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.9, 12), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, roughness: 0.35, metalness: 0.7 }));
+tablePost.position.y = 0.45;
+table.add(tablePost);
+const tableBase = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.6), new THREE.MeshStandardMaterial({ color: 0x9ca8b5, roughness: 0.45, metalness: 0.5 }));
+tableBase.position.y = 0.04;
+table.add(tableBase);
+// Side rails
+[-0.6, 0.6].forEach((dz) => {
+  const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.7 }));
+  rail.rotation.z = Math.PI / 2;
+  rail.position.set(0, 1.18, dz);
+  table.add(rail);
+});
+
+// Surgical lamp suspended above
+const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.6 }));
+lampArm.position.set(0, 2.6, 0);
+table.add(lampArm);
+const lampHead = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.55, 0.4, 0.18, 16),
+  new THREE.MeshStandardMaterial({ color: 0xeef2f6, roughness: 0.4, metalness: 0.5 })
+);
+lampHead.position.set(0, 1.95, 0);
+table.add(lampHead);
+// Lamp emissive bottom
+const lampGlow = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.4, 0.4, 0.04, 16),
+  new THREE.MeshBasicMaterial({ color: 0xfffbe0 })
+);
+lampGlow.position.set(0, 1.85, 0);
+table.add(lampGlow);
+// Cone of warm light pointing at the table
+const surgLight = new THREE.SpotLight(0xfff4d6, 1.6, 6, Math.PI / 5, 0.4, 1.4);
+surgLight.position.set(0, 1.9, 0);
+surgLight.target.position.set(0, 0.95, 0);
+table.add(surgLight); table.add(surgLight.target);
+// Patient screen on a pole at foot of bed (vital signs)
+const tScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.8, 0.5),
+  new THREE.MeshStandardMaterial({ color: 0x041318, emissive: 0x14ff7c, emissiveIntensity: 0.7, side: THREE.DoubleSide })
+);
+tScreen.position.set(1.4, 1.6, 0);
+tScreen.rotation.y = -Math.PI / 2;
+table.add(tScreen);
+const tScreenFrame = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.62, 0.92), new THREE.MeshStandardMaterial({ color: 0xe2e7ec }));
+tScreenFrame.position.set(1.42, 1.6, 0); table.add(tScreenFrame);
+const tScreenPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.6 }));
+tScreenPole.position.set(1.42, 0.8, 0); table.add(tScreenPole);
+
+// Stools for surgeons (3, around the bed)
+[[-0.4, 1.4], [1.0, 0], [-0.4, -1.4]].forEach(([dx, dz]) => {
+  const stool = new THREE.Group();
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x4fc5d9 }));
+  seat.position.y = 0.5; seat.castShadow = true; stool.add(seat);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+  post.position.y = 0.25; stool.add(post);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.05, 8), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+  base.position.y = 0.03; stool.add(base);
+  stool.position.set(dx, 0, dz);
+  table.add(stool);
+});
+
+// IV pole + bag at the head
+const ivPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.4, 8), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.7 }));
+ivPole.position.set(-1.4, 1.2, -0.5); table.add(ivPole);
+const ivBag = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.1), new THREE.MeshStandardMaterial({ color: 0xe6f3ff, transparent: true, opacity: 0.85, roughness: 0.3 }));
+ivBag.position.set(-1.4, 2.05, -0.5); table.add(ivBag);
+const ivBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 8), new THREE.MeshStandardMaterial({ color: 0x9ca8b5 }));
+ivBase.position.set(-1.4, 0.025, -0.5); table.add(ivBase);
+
+// ─── LOUNGE / SOFA ────────────────────────────────
+const lounge = new THREE.Group();
+lounge.position.set(7.5, 0, 4);
+office.add(lounge);
+// Sofa
+// Recovery / waiting bench — vinyl pad on stainless frame
+const sofa = new THREE.Mesh(
+  new THREE.BoxGeometry(2.4, 0.18, 1.0),
+  new THREE.MeshStandardMaterial({ color: 0x6ed5c8, roughness: 0.55 })
+);
+sofa.position.set(0, 0.55, 0); sofa.castShadow = sofa.receiveShadow = true;
+lounge.add(sofa);
+const sofaBack = new THREE.Mesh(
+  new THREE.BoxGeometry(2.4, 0.7, 0.18),
+  new THREE.MeshStandardMaterial({ color: 0x6ed5c8, roughness: 0.55 })
+);
+sofaBack.position.set(0, 0.95, -0.42); sofaBack.castShadow = true;
+lounge.add(sofaBack);
+// Stainless support frame
+const sofaFrame = new THREE.Mesh(
+  new THREE.BoxGeometry(2.5, 0.46, 1.05),
+  new THREE.MeshStandardMaterial({ color: 0xe2e7ec, roughness: 0.4, metalness: 0.4 })
+);
+sofaFrame.position.set(0, 0.23, 0); sofaFrame.castShadow = true;
+lounge.add(sofaFrame);
+// Armrests
+[-1.18, 1.18].forEach((dx) => {
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.32, 1.0), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.6 }));
+  arm.position.set(dx, 0.78, 0); lounge.add(arm);
+});
+// Medical instrument cart (replaces coffee table)
+const cTable = new THREE.Mesh(
+  new THREE.BoxGeometry(1.1, 0.05, 0.7),
+  new THREE.MeshStandardMaterial({ color: 0xeef2f6, roughness: 0.4, metalness: 0.3 })
+);
+cTable.position.set(0, 0.78, 1.3); cTable.castShadow = true;
+lounge.add(cTable);
+// Lower shelf
+const cShelf = new THREE.Mesh(
+  new THREE.BoxGeometry(1.0, 0.04, 0.6),
+  new THREE.MeshStandardMaterial({ color: 0xeef2f6, roughness: 0.4, metalness: 0.3 })
+);
+cShelf.position.set(0, 0.42, 1.3); lounge.add(cShelf);
+const cLeg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.78, 8), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.7 }));
+cLeg1.position.set(-0.5, 0.39, 1.5);
+lounge.add(cLeg1);
+const cLeg2 = cLeg1.clone(); cLeg2.position.x =  0.5; lounge.add(cLeg2);
+const cLeg3 = cLeg1.clone(); cLeg3.position.z =  1.1; lounge.add(cLeg3);
+const cLeg4 = cLeg1.clone(); cLeg4.position.set(0.5, 0.39, 1.1); lounge.add(cLeg4);
+// Wheels
+[[-0.5, 1.5], [0.5, 1.5], [-0.5, 1.1], [0.5, 1.1]].forEach(([dx, dz]) => {
+  const w = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 10), new THREE.MeshStandardMaterial({ color: 0x1a1f2c }));
+  w.rotation.z = Math.PI / 2;
+  w.position.set(dx, 0.04, dz);
+  lounge.add(w);
+});
+// Kidney basin + gauze on cart
+const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.04, 12, 1, false), new THREE.MeshStandardMaterial({ color: 0xb8c2cc, metalness: 0.5 }));
+basin.position.set(-0.2, 0.82, 1.3); lounge.add(basin);
+const gauze = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.04, 0.12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+gauze.position.set(0.25, 0.82, 1.35); lounge.add(gauze);
+const sharps = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.12), new THREE.MeshStandardMaterial({ color: 0xff5e5e, roughness: 0.6 }));
+sharps.position.set(0.4, 0.88, 1.25); lounge.add(sharps);
+
+// (Plants are now spawned inline above with the upgraded makePlant signature.)
+
+// ─── AGENT BUILDER ────────────────────────────────
+function buildAgent(opts) {
+  const grp = new THREE.Group();
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: opts.color, roughness: 0.55, metalness: 0.05, flatShading: true });
+  // White coat material — used for torso body and arms (hospital reskin)
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0xf5f6f8, roughness: 0.7, metalness: 0.02, flatShading: true });
+  const accentMat = new THREE.MeshStandardMaterial({ color: opts.accent, roughness: 0.6, flatShading: true });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5d4b3, roughness: 0.7, flatShading: true });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f2330, roughness: 0.85, flatShading: true });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0a0c12 });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+  const root = new THREE.Group(); grp.add(root);
+
+  const torso = new THREE.Group(); torso.position.y = 0.55; root.add(torso);
+  const hips = new THREE.Group(); hips.position.y = 0.5; root.add(hips);
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.85, 8), coatMat);
+  body.position.y = 0.4; body.castShadow = true; torso.add(body);
+  // Coat lapel V (slightly darker triangle on chest) for that classic lab-coat look
+  const lapel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.41, 0.42, 0.5, 8, 1, true, -Math.PI / 8, Math.PI / 4),
+    new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.75, side: THREE.DoubleSide, flatShading: true })
+  );
+  lapel.position.y = 0.55; torso.add(lapel);
+  // Stethoscope (thin tube around neck, ends drape on chest)
+  const stethMat = new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.55, flatShading: true });
+  const stethRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.018, 6, 16, Math.PI), stethMat);
+  stethRing.position.set(0, 0.85, 0.05); stethRing.rotation.x = Math.PI; torso.add(stethRing);
+  const stethL = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.32, 6), stethMat);
+  stethL.position.set(-0.16, 0.65, 0.4); torso.add(stethL);
+  const stethR = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.32, 6), stethMat);
+  stethR.position.set(0.16, 0.65, 0.4); torso.add(stethR);
+  const stethBell = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, 0.025, 12),
+    new THREE.MeshStandardMaterial({ color: 0xc0c4cc, metalness: 0.7, roughness: 0.25 })
+  );
+  stethBell.position.set(0.16, 0.48, 0.42); stethBell.rotation.x = Math.PI / 2; torso.add(stethBell);
+
+  const chestPanel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.05), accentMat);
+  chestPanel.position.set(0, 0.5, 0.45); torso.add(chestPanel);
+
+  const chestScreen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.26, 0.1, 0.03),
+    new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x4ade80, emissiveIntensity: 0.6 })
+  );
+  chestScreen.position.set(0, 0.5, 0.485); torso.add(chestScreen);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.1, 8), darkMat);
+  neck.position.y = 0.9; torso.add(neck);
+
+  const head = new THREE.Group(); head.position.y = 1.02; torso.add(head);
+  const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.55, 0.58), skinMat);
+  headMesh.castShadow = true; head.add(headMesh);
+  const hair = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.16, 0.61), bodyMat);
+  hair.position.y = 0.26; head.add(hair);
+  const tuft = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.16), bodyMat);
+  tuft.position.set(0.13, 0.34, 0); head.add(tuft);
+
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.11, 0.04), eyeMat);
+  eyeL.position.set(-0.14, 0.04, 0.30); head.add(eyeL);
+  const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.11, 0.04), eyeMat);
+  eyeR.position.set(0.14, 0.04, 0.30); head.add(eyeR);
+  const shineL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.02), whiteMat);
+  shineL.position.set(-0.12, 0.07, 0.32); head.add(shineL);
+  const shineR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.02), whiteMat);
+  shineR.position.set(0.16, 0.07, 0.32); head.add(shineR);
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.04, 0.04), eyeMat);
+  mouth.position.set(0, -0.14, 0.30); head.add(mouth);
+
+  // Headphones
+  const hpMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3d, roughness: 0.6, metalness: 0.4, flatShading: true });
+  const earL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.16, 0.16), hpMat);
+  earL.position.set(-0.36, 0.04, 0); head.add(earL);
+  const earR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.16, 0.16), hpMat);
+  earR.position.set(0.36, 0.04, 0); head.add(earR);
+
+  // Antenna
+  const antBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 6), darkMat);
+  antBase.position.y = 0.46; head.add(antBase);
+  const antBall = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 6),
+    new THREE.MeshStandardMaterial({ color: opts.color, emissive: opts.color, emissiveIntensity: 1.2 })
+  );
+  antBall.position.y = 0.58; head.add(antBall);
+
+  // Arms
+  function makeArm(side) {
+    const a = new THREE.Group();
+    a.position.set(side * 0.42, 0.78, 0); torso.add(a);
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.4, 0.22), coatMat);
+    upper.position.y = -0.18; upper.castShadow = true; a.add(upper);
+    const elbow = new THREE.Group(); elbow.position.y = -0.36; a.add(elbow);
+    const fore = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.36, 0.18), skinMat);
+    fore.position.y = -0.18; fore.castShadow = true; elbow.add(fore);
+    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.16, 0.2), skinMat);
+    hand.position.y = -0.42; hand.castShadow = true; elbow.add(hand);
+    return { group: a, elbow };
+  }
+  const armL = makeArm(-1);
+  const armR = makeArm(1);
+
+  // Legs (short / chibi - mostly tucked under torso)
+  function makeLeg(side) {
+    const l = new THREE.Group();
+    l.position.set(side * 0.16, 0, 0); hips.add(l);
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.24), darkMat);
+    upper.position.y = -0.11; upper.castShadow = true; l.add(upper);
+    const knee = new THREE.Group(); knee.position.y = -0.22; l.add(knee);
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.22), darkMat);
+    lower.position.y = -0.1; lower.castShadow = true; knee.add(lower);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.32),
+      new THREE.MeshStandardMaterial({ color: 0x0e1118 }));
+    foot.position.set(0, -0.22, 0.04); foot.castShadow = true; knee.add(foot);
+    return { group: l, knee };
+  }
+  const legL = makeLeg(-1);
+  const legR = makeLeg(1);
+
+  // Glow disc
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.55, 24),
+    new THREE.MeshBasicMaterial({ color: opts.color, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.01; grp.add(glow);
+
+  // Thought bubble (3D)
+  const thought = new THREE.Group(); thought.visible = false; torso.add(thought);
+  const tb1 = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff, emissive: 0xfff, emissiveIntensity: 0.3 }));
+  tb1.position.set(0.4, 1.2, 0); thought.add(tb1);
+  const tb2 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff, emissive: 0xfff, emissiveIntensity: 0.3 }));
+  tb2.position.set(0.55, 1.4, 0); thought.add(tb2);
+  const tb3 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), new THREE.MeshStandardMaterial({ color: 0xfff, emissive: 0xfff, emissiveIntensity: 0.4 }));
+  tb3.position.set(0.78, 1.65, 0); thought.add(tb3);
+
+  scene.add(grp);
+
+  return {
+    ...opts,
+    group: grp,
+    root, torso, hips, head, eyeL, eyeR, mouth, chestScreen,
+    armL, armR, legL, legR, antBall, glow, thought,
+    bodyMat, accentMat,
+    pos: new THREE.Vector3(),
+    target: new THREE.Vector3(),
+    facing: 0,
+    bubbleEl: null,
+    nextBubbleAt: 0,
+    walkPath: null,
+    walkProgress: 0,
+    actionTimer: 0,
+  };
+}
+
+// ─── Station coords ──────────────────────────────
+const STATIONS = {
+  0: { x: -7, z: -1.7, facing: Math.PI },     // desk 0 (face -z monitor)
+  1: { x: -3, z: -1.7, facing: Math.PI },     // desk 1
+  2: { x:  3, z: -1.7, facing: Math.PI },
+  3: { x:  7, z: -1.7, facing: Math.PI },
+  'meeting-1': { x: -3,   z: 4.6, facing: Math.PI },        // north of table, faces -z (toward center)
+  'meeting-2': { x: -1.4, z: 3,   facing: -Math.PI / 2 },   // east of table, faces -x
+  'meeting-3': { x: -3,   z: 1.4, facing: 0 },              // south of table, faces +z
+  'meeting-4': { x: -4.6, z: 3,   facing: Math.PI / 2 },    // west of table, faces +x
+  'lounge':    { x: 7.5,  z: 4.0, facing: 0, yOffset: 0.55 }, // sitting on sofa
+  'wander': null,
+};
+
+// Build agents
+const agentMap = {};
+AGENTS.forEach(a => {
+  const ag = buildAgent({ id: a.id, name: a.name, role: a.role, color: a.color, accent: a.accent });
+  ag.action = a.action;
+  ag.station = a.station;
+  if (a.station !== 'wander' && STATIONS[a.station]) {
+    const s = STATIONS[a.station];
+    ag.pos.set(s.x, 0, s.z);
+    ag.facing = s.facing;
+    ag.yOffset = s.yOffset || 0;
+  } else {
+    ag.pos.set(Math.random() * 10 - 5, 0, Math.random() * 4 - 1);
+    ag.yOffset = 0;
+  }
+  ag.group.position.copy(ag.pos);
+  ag.group.rotation.y = ag.facing;
+  agentMap[a.id] = ag;
+});
+
+// Expose to parent (used by /clinic via postMessage). Versión liviana del intent system.
+function dispatchIntent(ag, intent /* , opts */) {
+  if (!ag) return;
+  // Mapeo intent → action visible. Sin pathfinding complejo: cambio de animación in-place.
+  switch (intent) {
+    case 'work':    ag.action = 'type';  break;
+    case 'meeting': ag.action = 'talk';  break;
+    case 'think':   ag.action = 'think'; break;
+    case 'walk':    ag.action = 'walk';  break;
+    case 'idle':    ag.action = 'idle';  break;
+    case 'talk-to': ag.action = 'talk';  break;
+    default: break;
+  }
+  if (ag.activityEl) ag.activityEl.classList.toggle('has-preview', ag.action === 'type');
+}
+function dispatchToAll(intent /* , opts */) {
+  AGENTS.forEach(a => dispatchIntent(agentMap[a.id], intent));
+}
+window.__office = { AGENTS, agentMap, dispatchIntent, dispatchToAll };
+window.dispatchIntent = (id, intent, opts) => dispatchIntent(agentMap[id], intent, opts);
+window.dispatchToAll = dispatchToAll;
+
+// Room bounds (with margin so agents don't clip walls / objects)
+const ROOM_BOUNDS = {
+  minX: -WX + 1.2,
+  maxX:  WX - 1.2,
+  minZ: -WZ + 1.2,
+  maxZ:  WZ - 1.2,
+};
+
+// Obstacles (rect = AABB to push out of; circle = radial repulsion)
+const OBSTACLES = [
+  // Desks
+  { type: 'rect', minX: -8.2, maxX: -5.8, minZ: -3.7, maxZ: -1.3 },
+  { type: 'rect', minX: -4.2, maxX: -1.8, minZ: -3.7, maxZ: -1.3 },
+  { type: 'rect', minX:  1.8, maxX:  4.2, minZ: -3.7, maxZ: -1.3 },
+  { type: 'rect', minX:  5.8, maxX:  8.2, minZ: -3.7, maxZ: -1.3 },
+  // Conference table + chairs
+  { type: 'circle', x: -3, z: 3, r: 2.7 },
+  // Lounge sofa + coffee table
+  { type: 'rect', minX: 6.0, maxX: 9.0, minZ: 3.3, maxZ: 5.7 },
+  // Glass meeting room walls (don't walk through glass)
+  { type: 'rect', minX: -5.7, maxX: -3.7, minZ:  5.4, maxZ:  5.8 },
+  { type: 'rect', minX: -2.6, maxX: -0.4, minZ:  5.4, maxZ:  5.8 },
+  { type: 'rect', minX: -0.5, maxX: -0.3, minZ:  0.3, maxZ:  5.7 },
+  // Server room (back-left)
+  { type: 'rect', minX: -19.3, maxX: -10.7, minZ: -9.0, maxZ: -4.9 },
+  // Kitchenette (back-right)
+  { type: 'rect', minX:  9.5, maxX: 16.5, minZ: -10.7, maxZ: -8.5 },
+  // Ping pong table
+  { type: 'rect', minX:  11.6, maxX: 14.4, minZ: -4.3, maxZ: -2.7 },
+  // Bookshelf (left mid wall)
+  { type: 'rect', minX: -19.4, maxX: -18.7, minZ: -9.2, maxZ: -6.8 },
+  // Reception
+  { type: 'rect', minX:  -1.7, maxX: 1.7, minZ: 11.0, maxZ: 12.0 },
+  // Plants
+  { type: 'circle', x: -WX + 1.0, z:  WZ - 1.0, r: 0.7 },
+  { type: 'circle', x:  WX - 1.0, z: -WZ + 1.2, r: 0.7 },
+  { type: 'circle', x: -WX + 1.0, z: -WZ + 1.2, r: 0.7 },
+  { type: 'circle', x:  WX - 1.0, z:  WZ - 1.0, r: 0.7 },
+];
+
+function clampToRoom(p) {
+  p.x = Math.max(ROOM_BOUNDS.minX, Math.min(ROOM_BOUNDS.maxX, p.x));
+  p.z = Math.max(ROOM_BOUNDS.minZ, Math.min(ROOM_BOUNDS.maxZ, p.z));
+}
+
+// Push a 2D point (with margin radius) out of any obstacle. Returns true if moved.
+function avoidObstacles(p, agentRadius = 0.45) {
+  let moved = false;
+  for (const o of OBSTACLES) {
+    if (o.type === 'rect') {
+      const minX = o.minX - agentRadius, maxX = o.maxX + agentRadius;
+      const minZ = o.minZ - agentRadius, maxZ = o.maxZ + agentRadius;
+      if (p.x > minX && p.x < maxX && p.z > minZ && p.z < maxZ) {
+        // push out via shortest axis
+        const dLeft  = p.x - minX;
+        const dRight = maxX - p.x;
+        const dUp    = p.z - minZ;
+        const dDown  = maxZ - p.z;
+        const m = Math.min(dLeft, dRight, dUp, dDown);
+        if (m === dLeft)       p.x = minX;
+        else if (m === dRight) p.x = maxX;
+        else if (m === dUp)    p.z = minZ;
+        else                   p.z = maxZ;
+        moved = true;
+      }
+    } else if (o.type === 'circle') {
+      const dx = p.x - o.x, dz = p.z - o.z;
+      const d2 = dx*dx + dz*dz;
+      const R = o.r + agentRadius;
+      if (d2 < R * R && d2 > 0.0001) {
+        const d = Math.sqrt(d2);
+        p.x = o.x + (dx / d) * R;
+        p.z = o.z + (dz / d) * R;
+        moved = true;
+      }
+    }
+  }
+  return moved;
+}
+
+// ─── Wander path (across the bigger HQ, avoiding zone obstacles) ────────
+const WANDER_POINTS = [
+  new THREE.Vector3(-9, 0, 7),
+  new THREE.Vector3( 0, 0, 7.5),
+  new THREE.Vector3( 4, 0, 7),
+  new THREE.Vector3( 6, 0, 0.5),
+  new THREE.Vector3( 2, 0, -0.5),
+  new THREE.Vector3(-7, 0, 1),
+  new THREE.Vector3(-9, 0, 3),
+  new THREE.Vector3( 0, 0, 0),
+  new THREE.Vector3( 11, 0, -6),     // near ping pong
+  new THREE.Vector3( 11, 0, -8.6),   // kitchen counter
+  new THREE.Vector3( 9, 0, 9.6),     // front-right
+  new THREE.Vector3(-9, 0, 9.6),     // front-left
+  new THREE.Vector3(-12, 0, 5),      // by data center entry
+  new THREE.Vector3( 0, 0, 9.5),     // reception area
+];
+
+function pickNextWanderTarget(ag) {
+  const cur = ag.pos.clone();
+  let best = WANDER_POINTS[0]; let bestD = -Infinity;
+  for (const p of WANDER_POINTS) {
+    const d = p.distanceTo(cur);
+    if (d > 1.5 && d > bestD * 0.6 && Math.random() > 0.4) { best = p; bestD = d; }
+  }
+  // prefer different from current
+  const candidates = WANDER_POINTS.filter(p => p.distanceTo(cur) > 2);
+  return candidates[Math.floor(Math.random() * candidates.length)] || WANDER_POINTS[0];
+}
+
+// ─── Bubbles (DOM) ───────────────────────────────
+const PHRASES = {
+  type: ["updating chart notes.", "writing prescription.", "reviewing labs.", "signing off on intake.", "charting vitals."],
+  talk: ["Patient is stable.", "Let's order the MRI.", "Vitals look normal.", "Schedule the follow-up.", "Walk me through the imaging."],
+  walk: ["heading to triage.", "rounds in 10.", "checking on bed 4.", "to the nurses' station."],
+  think: ["differential dx?", "could be tachycardia…", "reading the imaging again.", "reviewing the case."],
+  idle: ["☕ between rounds.", "on call.", "page me anytime."],
+};
+
+const bubblesEl = document.getElementById('bubbles');
+const activityCardsEl = document.getElementById('activityCards');
+
+// ─── Activity tracking ───────────────────────────────
+const ROLE_TASKS = {
+  pixel: {
+    type:  ['Op note for bed 7', 'Charting post-op vitals', 'Reviewing surgical plan', 'Signing consent form', 'Updating procedure log'],
+    talk:  ['Pre-op briefing', 'Walking team through approach', 'Morning rounds'],
+    think: ['Approach for this case', 'Risk assessment', 'Anesthesia timing'],
+    walk:  ['To OR scrub', 'To recovery', 'Quick break'],
+    idle:  ['On call', 'Between cases'],
+  },
+  nova: {
+    type:  ['Reading ECG strip', 'Charting bed 12', 'Cardio consult notes', 'Echo report draft', 'Adjusting medication'],
+    talk:  ['Consult with Echo', 'Family update', 'Rounds discussion'],
+    think: ['Differential dx', 'Stent vs medical mgmt', 'Watching telemetry'],
+    walk:  ['To cath lab', 'To bedside', 'Coffee run'],
+    idle:  ['Reviewing telemetry', 'On call'],
+  },
+  echo: {
+    type:  ['Drafting staffing plan', 'Reviewing protocols', 'Department report', 'Bed-management memo'],
+    talk:  ['Department huddle', 'Stakeholder sync', 'Case conference', 'Family meeting'],
+    think: ['Capacity planning', 'Triage priorities', 'Hiring plan'],
+    walk:  ['To boardroom', 'To ER', 'Rounds'],
+    idle:  ['Reviewing inbox', 'Between meetings'],
+  },
+  jade: {
+    type:  ['Pediatric chart bed 3', 'Growth chart update', 'Vaccination schedule', 'Discharge instructions'],
+    talk:  ['Family discussion', 'Pairing with Pixel', 'Reviewing case'],
+    think: ['Treatment plan', 'Dosage calc', 'Watching for symptoms'],
+    walk:  ['To pediatric ward', 'Quick break', 'To pharmacy'],
+    idle:  ['Between patients', 'Reviewing files'],
+  },
+  rune: {
+    type:  ['Reading MRI bed 9', 'CT scan write-up', 'X-ray report', 'Annotating images'],
+    talk:  ['Imaging review', 'Sharing findings'],
+    think: ['Reading the slice', 'Differential dx #4', 'Second look'],
+    walk:  ['To imaging suite', 'Tea break', 'Stretching'],
+    idle:  ['Queue cleared', 'Reading'],
+  },
+  ember: {
+    type:  ['Triage intake form', 'IV med log', 'Vitals sweep', 'Restocking crash cart'],
+    talk:  ['Handoff briefing', 'Code blue debrief'],
+    think: ['Bed assignment', 'Priority order'],
+    walk:  ['To bed 4', 'Patrol round', 'To supply room'],
+    idle:  ['Floor watch', 'Monitoring'],
+  },
+};
+const ACTION_META = {
+  type:  { label: 'CHARTING',   icon: '✚', solid: false },
+  talk:  { label: 'CONSULT',    icon: '◉', solid: false },
+  think: { label: 'REVIEWING',  icon: '?', solid: false },
+  walk:  { label: 'ROUNDS',     icon: '→', solid: false },
+  idle:  { label: 'ON CALL',    icon: '○', solid: true  },
+};
+const _agtSeed = {};
+function pickRoleTask(ag) {
+  const list = (ROLE_TASKS[ag.id] || ROLE_TASKS.pixel)[ag.action] || ['Working'];
+  // Deterministic-ish per agent so it doesn't flicker every frame; rotate slowly.
+  const slot = Math.floor(performance.now() / 6000) + (_agtSeed[ag.id] || 0);
+  return list[slot % list.length];
+}
+function makeActivityCard(ag) {
+  const el = document.createElement('div');
+  el.className = 'activity-card';
+  el.style.setProperty('--c', ag.color);
+  el.innerHTML = `
+    <div class="ac-row">
+      <span class="ac-icon" style="background:${ag.color}">${ACTION_META.idle.icon}</span>
+      <span class="ac-label">${ag.name.toUpperCase()}</span>
+    </div>
+    <div class="ac-task">…</div>
+    <div class="ac-bar"><div class="ac-bar-fill"></div></div>
+    <div class="ac-preview">
+      <div class="pv-chrome"><i></i><i></i><i></i></div>
+      <div class="pv-body">
+        <div class="pv-head"></div>
+        <div class="pv-row">
+          <div class="pv-block b1"></div>
+          <div class="pv-block b2"></div>
+          <div class="pv-block b3"></div>
+        </div>
+        <div class="pv-lines">
+          <div class="pv-ln"></div>
+          <div class="pv-ln"></div>
+          <div class="pv-ln"></div>
+        </div>
+        <div class="pv-btn"></div>
+      </div>
+    </div>
+  `;
+  activityCardsEl.appendChild(el);
+  ag.activityEl = el;
+  ag.activityIconEl = el.querySelector('.ac-icon');
+  ag.activityLabelEl = el.querySelector('.ac-label');
+  ag.activityTaskEl = el.querySelector('.ac-task');
+  ag.showActivity = false;       // off by default per request
+  ag.activityLastTask = '';
+  ag.activityLastAction = '';
+  _agtSeed[ag.id] = Math.floor(Math.random() * 99);
+}
+function refreshActivityCard(ag) {
+  if (!ag.activityEl) return;
+  const meta = ACTION_META[ag.action] || ACTION_META.idle;
+  const task = pickRoleTask(ag);
+  if (ag.activityLastAction !== ag.action) {
+    ag.activityIconEl.textContent = meta.icon;
+    ag.activityLabelEl.textContent = `${ag.name.toUpperCase()} · ${meta.label}`;
+    ag.activityEl.classList.toggle('solid', !!meta.solid);
+    // Show the mini "building something web" preview only while coding
+    ag.activityEl.classList.toggle('has-preview', ag.action === 'type');
+    ag.activityLastAction = ag.action;
+  }
+  if (ag.activityLastTask !== task) {
+    ag.activityTaskEl.textContent = task;
+    ag.activityLastTask = task;
+  }
+}
+function setAgentActivityVisibility(ag, on) {
+  ag.showActivity = !!on;
+  if (!ag.activityEl) return;
+  if (!on) {
+    ag.activityEl.classList.remove('show');
+    ag.activityEl.style.opacity = 0;
+  }
+}
+
+function makeBubble(ag) {
+  const el = document.createElement('div');
+  el.className = 'chat-bubble';
+  el.innerHTML = `<div class="author" style="color:${ag.color}">${ag.name.toUpperCase()}</div><div class="text">…</div>`;
+  bubblesEl.appendChild(el);
+  ag.bubbleEl = el;
+  ag.bubbleTextEl = el.querySelector('.text');
+}
+Object.values(agentMap).forEach(makeBubble);
+Object.values(agentMap).forEach(makeActivityCard);
+
+// ─── Agent contextual interaction modal ──────────────
+const AGENT_CONTEXT = {
+  pixel: {
+    intro: "Working on the renderer right now — heads-down on UI components and animation polish.",
+    prompts: [
+      { icon: "◉", text: "Show me what you're building" },
+      { icon: "▤", text: "Review my component code" },
+      { icon: "◢", text: "Help me debug a CSS issue" },
+      { icon: "❒", text: "Suggest a better animation for this" },
+    ],
+  },
+  nova: {
+    intro: "Backend work in progress. Patching the auth flow and tuning the database queries.",
+    prompts: [
+      { icon: "⌘", text: "Walk me through the API design" },
+      { icon: "◇", text: "Optimize this database query" },
+      { icon: "▣", text: "Help write tests for this endpoint" },
+      { icon: "◉", text: "What's our current uptime?" },
+    ],
+  },
+  echo: {
+    intro: "In a sync about the roadmap. Happy to talk priorities, scope, or stakeholder updates.",
+    prompts: [
+      { icon: "◇", text: "What's the team focused on this sprint?" },
+      { icon: "▤", text: "Draft a status update for stakeholders" },
+      { icon: "◢", text: "Help me prioritize this backlog" },
+      { icon: "❒", text: "Schedule a kickoff meeting" },
+    ],
+  },
+  jade: {
+    intro: "Reviewing flows and component specs. Ready to riff on visuals, IA, or interaction.",
+    prompts: [
+      { icon: "◉", text: "Critique this design" },
+      { icon: "▣", text: "Suggest a color palette" },
+      { icon: "◇", text: "Help me name this component" },
+      { icon: "❒", text: "Walk through a user flow with me" },
+    ],
+  },
+  ember: {
+    intro: "Walking the floor between deploys. CI/CD, infra and observability is my world.",
+    prompts: [
+      { icon: "◢", text: "Diagnose a failing pipeline" },
+      { icon: "⌘", text: "Set up a new environment" },
+      { icon: "◇", text: "Review the deploy logs" },
+      { icon: "▤", text: "Plan a rollback strategy" },
+    ],
+  },
+  rune: {
+    intro: "On the lounge sofa thinking through edge cases. QA mind always on.",
+    prompts: [
+      { icon: "◉", text: "Find bugs in this feature" },
+      { icon: "▣", text: "Write test cases for this flow" },
+      { icon: "◢", text: "Reproduce a flaky test" },
+      { icon: "❒", text: "Audit accessibility for me" },
+    ],
+  },
+};
+
+const modalEl = document.getElementById('agentModal');
+const amCard = document.getElementById('agentModalCard');
+let modalAgent = null;
+const sessions = {}; // per-agent message history
+
+function renderAgentList() {
+  const list = document.getElementById('amList');
+  list.innerHTML = '';
+  AGENTS.forEach(a => {
+    const item = document.createElement('div');
+    item.className = 'am-list-item' + (modalAgent && modalAgent.id === a.id ? ' active' : '');
+    item.style.setProperty('--c', a.color);
+    item.innerHTML = `<span class="am-list-dot"></span><span>${a.name}</span>`;
+    item.addEventListener('click', () => openAgentModal(agentMap[a.id]));
+    list.appendChild(item);
+  });
+  document.getElementById('amCount').textContent = AGENTS.length;
+}
+
+function renderConversation() {
+  const conv = document.getElementById('amConv');
+  const ag = modalAgent;
+  const ctx = AGENT_CONTEXT[ag.id] || { intro: "Available to chat.", prompts: [] };
+  const msgs = sessions[ag.id] || [];
+  conv.innerHTML = '';
+
+  // Greeting (always first)
+  const greet = document.createElement('div');
+  greet.className = 'am-msg';
+  greet.innerHTML = `
+    <div class="am-msg-avatar" style="--c:${ag.color}">${ag.name[0]}</div>
+    <div class="am-msg-body">
+      <div class="am-msg-author">${ag.name}</div>
+      <div class="am-msg-bubble">${escapeHtml(ctx.intro)}</div>
+      <div class="am-msg-hint">Try a quick prompt or describe a task to get started.</div>
+      <div class="am-chips" id="amChips"></div>
+    </div>`;
+  conv.appendChild(greet);
+  const chips = greet.querySelector('#amChips');
+  ctx.prompts.forEach(p => {
+    const c = document.createElement('button');
+    c.className = 'am-chip';
+    c.style.setProperty('--c', ag.color);
+    c.textContent = p.text;
+    c.addEventListener('click', () => sendToAgent(p.text));
+    chips.appendChild(c);
+  });
+
+  msgs.forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'am-msg' + (m.role === 'user' ? ' user' : '');
+    el.innerHTML = `
+      <div class="am-msg-avatar ${m.role==='user'?'user':''}" style="--c:${ag.color}">${m.role==='user'?'Y':ag.name[0]}</div>
+      <div class="am-msg-body">
+        <div class="am-msg-author">${m.role === 'user' ? 'You' : ag.name}</div>
+        <div class="am-msg-bubble">${m.thinking ? `<span class="am-thinking" style="--c:${ag.color}">thinking <span class="dot"></span><span class="dot"></span><span class="dot"></span></span>` : escapeHtml(m.content)}</div>
+      </div>`;
+    conv.appendChild(el);
+  });
+  conv.scrollTop = conv.scrollHeight;
+}
+
+// ============= NEURAL MIND embedded viz =============
+const amMind = (() => {
+  const cv = document.getElementById('amMindCanvas');
+  const ctx = cv.getContext('2d');
+  const LAYERS = 6, PER = [4, 10, 14, 14, 10, 4];
+  // Fixed Neural Mind palette (Aurora — same across all agents)
+  const PALETTE = {
+    activate: '#7df9ff',     // primary cyan pulse
+    activateHot: '#ff5edb',  // hot magenta
+    accent: '#a78bfa',       // purple accent
+    nodeIdle: '#3a4a7a',     // cool blue idle
+    nodeWarm: '#5b8def',     // warm blue
+    spark: '#fff8a3'         // yellow spark
+  };
+  let W = 0, H = 0, dpr = 1;
+  let nodes = [], edges = [], outEdges = [], pulses = [], rafId = null, t0 = 0;
+  let pulseTotal = 0;
+
+  function resize(){
+    const r = cv.getBoundingClientRect();
+    // Cap DPR at 1 — viz is stylized, doesn't need 2x. Halves pixel work.
+    dpr = 1;
+    W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    layout();
+  }
+  function layout(){
+    nodes = []; edges = []; outEdges = [];
+    const padX = 56, padY = 36;
+    const usableW = W - padX*2, usableH = H - padY*2;
+    const layerStart = []; // first node index per layer
+    for (let l = 0; l < LAYERS; l++){
+      layerStart.push(nodes.length);
+      const x = padX + (usableW * l) / (LAYERS - 1);
+      const n = PER[l];
+      for (let i = 0; i < n; i++){
+        const y = padY + ((i + 0.5) / n) * usableH + (Math.sin((l*7+i)*1.7)*4);
+        nodes.push({ x, y, l, i, glow: 0, base: 0.18 + Math.random()*0.15 });
+      }
+    }
+    layerStart.push(nodes.length);
+    // sparse edges between consecutive layers (35% connectivity)
+    for (let l = 0; l < LAYERS - 1; l++){
+      const aStart = layerStart[l], aEnd = layerStart[l+1];
+      const bStart = layerStart[l+1], bEnd = layerStart[l+2];
+      const bCount = bEnd - bStart;
+      const picks = Math.max(1, Math.ceil(bCount * 0.35));
+      for (let ai = aStart; ai < aEnd; ai++){
+        const used = new Set();
+        for (let k = 0; k < picks; k++){
+          let bi;
+          let safety = 8;
+          do { bi = bStart + ((Math.random() * bCount) | 0); } while (used.has(bi) && safety-- > 0);
+          used.add(bi);
+          edges.push({ a: ai, b: bi, w: 0.15 + Math.random()*0.4 });
+        }
+      }
+    }
+    // precompute outgoing edges per node (avoid O(E) filter per spawn)
+    outEdges = nodes.map(() => []);
+    for (let i = 0; i < edges.length; i++){
+      outEdges[edges[i].a].push(edges[i]);
+    }
+    document.getElementById('amMindNodes').textContent = nodes.length;
+  }
+
+  let lastFireAt = 0;
+  function firePulse(){
+    const now = performance.now();
+    if (now - lastFireAt < 220) return; // throttle
+    lastFireAt = now;
+    pulseTotal++;
+    document.getElementById('amMindPulses').textContent = pulseTotal;
+    document.getElementById('amMindState').textContent = 'thinking';
+    const inputCount = PER[0];
+    for (let k = 0; k < inputCount; k++){
+      setTimeout(() => spawnFromNode(k), k * 80);
+    }
+    setTimeout(() => { document.getElementById('amMindState').textContent = 'idle'; }, 2400);
+  }
+  const MAX_PULSES = 60;
+  function spawnFromNode(idx){
+    if (pulses.length >= MAX_PULSES) return;
+    const n = nodes[idx];
+    if (!n) return;
+    n.glow = 1;
+    if (n.l >= LAYERS - 1) return;
+    const outs = outEdges[idx];
+    if (!outs || outs.length === 0) return;
+    const nPicks = Math.min(outs.length, 1 + (Math.random() < 0.3 ? 1 : 0));
+    for (let k = 0; k < nPicks; k++){
+      if (pulses.length >= MAX_PULSES) return;
+      const e = outs[(Math.random() * outs.length) | 0];
+      pulses.push({ from: idx, to: e.b, t: 0, speed: 0.012 + Math.random()*0.008 });
+    }
+  }
+
+  function tick(ts){
+    const dt = t0 ? (ts - t0) : 16; t0 = ts;
+    ctx.fillStyle = 'rgba(4,5,10,0.28)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges (single stroke, no per-edge gradient — was the main bottleneck)
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = hexA(PALETTE.accent, 0.07);
+    ctx.beginPath();
+    edges.forEach(e => {
+      const a = nodes[e.a], b = nodes[e.b];
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    });
+    ctx.stroke();
+
+    // pulses advance — batch trails and particles to minimize state changes
+    const dtScale = dt / 16;
+    const trailColor = hexA(PALETTE.activate, 0.65);
+    ctx.strokeStyle = trailColor;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let i = 0; i < pulses.length; i++){
+      const p = pulses[i];
+      p.t += p.speed * dtScale;
+      const a = nodes[p.from], b = nodes[p.to];
+      const x = a.x + (b.x - a.x) * p.t;
+      const y = a.y + (b.y - a.y) * p.t;
+      const t0p = p.t > 0.18 ? p.t - 0.18 : 0;
+      const sx = a.x + (b.x - a.x) * t0p, sy = a.y + (b.y - a.y) * t0p;
+      ctx.moveTo(sx, sy); ctx.lineTo(x, y);
+      p._x = x; p._y = y;
+    }
+    ctx.stroke();
+    // particles in one path
+    ctx.fillStyle = PALETTE.spark;
+    ctx.beginPath();
+    for (let i = 0; i < pulses.length; i++){
+      const p = pulses[i];
+      ctx.moveTo(p._x + 2.4, p._y);
+      ctx.arc(p._x, p._y, 2.4, 0, Math.PI*2);
+    }
+    ctx.fill();
+    // sweep finished pulses (no quadratic splice)
+    let w = 0;
+    for (let i = 0; i < pulses.length; i++){
+      const p = pulses[i];
+      if (p.t >= 1){
+        nodes[p.to].glow = Math.min(1.4, nodes[p.to].glow + 0.7);
+        if (nodes[p.to].l < LAYERS - 1 && pulses.length < MAX_PULSES * 0.6){
+          if (Math.random() < 0.4) spawnFromNode(p.to);
+        }
+      } else {
+        pulses[w++] = p;
+      }
+    }
+    pulses.length = w;
+
+    // nodes — split into two passes to avoid per-node shadow toggling
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = PALETTE.activate;
+    // pass 1: idle/dim nodes (no shadow)
+    for (let k = 0; k < nodes.length; k++){
+      const n = nodes[k];
+      const intensity = n.base + n.glow;
+      if (intensity > 0.55) continue;
+      const r = 2.2 + intensity * 3;
+      const col = intensity > 0.3 ? PALETTE.nodeWarm : PALETTE.nodeIdle;
+      ctx.fillStyle = hexA(col, Math.min(0.95, 0.25 + intensity*0.65));
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI*2); ctx.fill();
+      n.glow *= 0.94;
+    }
+    // pass 2: active nodes (shadow on)
+    for (let k = 0; k < nodes.length; k++){
+      const n = nodes[k];
+      const intensity = n.base + n.glow;
+      if (intensity <= 0.55) continue;
+      const r = 2.2 + intensity * 3;
+      ctx.fillStyle = hexA(PALETTE.activate, Math.min(0.95, 0.25 + intensity*0.65));
+      ctx.shadowBlur = 6 + intensity*10;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI*2); ctx.fill();
+      n.glow *= 0.94;
+    }
+    ctx.shadowBlur = 0;
+
+    // ambient idle pulse
+    if (Math.random() < 0.012 && pulses.length < 40){
+      const idx = Math.floor(Math.random() * nodes.length * 0.3);
+      spawnFromNode(idx);
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function hexA(hex, a){
+    // accept #rrggbb
+    const h = hex.replace('#','');
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function start(){
+    document.getElementById('amMind').style.setProperty('--c', PALETTE.activate);
+    pulseTotal = 0;
+    document.getElementById('amMindPulses').textContent = 0;
+    document.getElementById('amMindState').textContent = 'idle';
+    if (!rafId){
+      resize();
+      t0 = 0;
+      rafId = requestAnimationFrame(tick);
+    } else {
+      resize();
+    }
+  }
+  function stop(){
+    if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  window.addEventListener('resize', () => { if (rafId) resize(); });
+  return { start, stop, firePulse };
+})();
+
+function openAgentModal(ag) {
+  modalAgent = ag;
+  amCard.style.setProperty('--c', ag.color);
+  const av = document.getElementById('amAvatar');
+  av.style.setProperty('--c', ag.color);
+  av.textContent = ag.name[0];
+  document.getElementById('amName').textContent = ag.name;
+  // Reflect activity-toggle state for this agent
+  const at = document.getElementById('amActivityToggle');
+  if (at) {
+    at.style.setProperty('--c', ag.color);
+    at.classList.toggle('on', !!ag.showActivity);
+  }
+  if (!sessions[ag.id]) sessions[ag.id] = [];
+  renderAgentList();
+  renderConversation();
+  document.getElementById('amInput').value = '';
+  updateSendState();
+  modalEl.classList.add('show');
+  document.body.classList.add('chat-open');
+  // boot neural mind viz (fixed Aurora palette)
+  amMind.start();
+  setTimeout(() => document.getElementById('amInput').focus(), 50);
+}
+
+function closeAgentModal() {
+  modalEl.classList.remove('show');
+  document.body.classList.remove('chat-open');
+  amMind.stop();
+  modalAgent = null;
+}
+
+// Hardcoded specialist quick-replies (no LLM, no fetch).
+const HARDCODED_REPLIES = {
+  echo:  ["Coordinando al equipo. Te delego al especialista correcto.", "Atlas en posición. ¿Necesitas otra opinión?", "Activando junta clínica si lo prefieres."],
+  nova:  ["Pulso aquí. Ritmo sinusal estable, presión 120/80.", "Revisando perfusión miocárdica.", "Frecuencia 72 bpm, gasto cardíaco normal."],
+  pixel: ["Synapse en escena. Activando trazado neuronal.", "Las vías están conduciendo bien.", "Hipocampo y prefrontal sin hallazgos."],
+  jade:  ["Aire al habla. Saturación 97%, ventilación normal.", "Intercambio gaseoso óptimo.", "Bronquios permeables."],
+  ember: ["Vesta al habla. Tránsito digestivo en ritmo.", "Mucosa íntegra, microbiota balanceada.", "Sin signos de irritación gástrica."],
+  rune:  ["Vitrum al frente. Estructura ósea sin alteraciones.", "Articulaciones móviles, sin dolor.", "Densidad ósea adecuada."],
+};
+function pickReply(agId) {
+  const arr = HARDCODED_REPLIES[agId] || HARDCODED_REPLIES.echo;
+  return arr[(Math.random() * arr.length) | 0];
+}
+async function sendToAgent(text) {
+  if (!modalAgent || !text.trim()) return;
+  const ag = modalAgent;
+  const arr = sessions[ag.id];
+  arr.push({ role: 'user', content: text });
+  arr.push({ role: 'assistant', content: '', thinking: true });
+  amMind.firePulse();
+  renderConversation();
+  // Si estamos embebidos en /clinic, delega al parent (flow hardcoded principal).
+  if (document.body.classList.contains('embed')) {
+    parent?.postMessage({ type: 'agent-chat', agentId: ag.id, text }, '*');
+  }
+  // Reply hardcoded local (sin red, instantáneo).
+  setTimeout(() => {
+    const reply = pickReply(ag.id);
+    arr[arr.length - 1] = { role: 'assistant', content: reply };
+    renderConversation();
+    showBubble(ag, reply.slice(0, 80), 4500);
+  }, 220);
+}
+
+function updateSendState() {
+  const v = document.getElementById('amInput').value.trim();
+  document.getElementById('amSend').classList.toggle('ready', !!v);
+}
+
+function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ============= OFFICE NEURAL MIND VIEW =============
+(function officeNeural(){
+  const cv = document.getElementById('neuralCanvas');
+  const ctx = cv.getContext('2d');
+  const PALETTE = { activate: '#7df9ff', accent: '#a78bfa', nodeIdle: '#3a4a7a', nodeWarm: '#5b8def', spark: '#fff8a3' };
+  // Reuse AGENTS roster from main scope
+  const agentList = (typeof AGENTS !== 'undefined') ? AGENTS : [
+    {id:'pixel',name:'Pixel',color:'#ff7849'},{id:'nova',name:'Nova',color:'#60a5fa'},
+    {id:'echo',name:'Echo',color:'#a78bfa'},{id:'jade',name:'Jade',color:'#4ade80'},
+    {id:'ember',name:'Ember',color:'#fbbf24'},{id:'rune',name:'Rune',color:'#ff5e8a'}
+  ];
+  const NODE_COUNT = 280;
+  let W = 0, H = 0, dpr = 1;
+  let nodes = [], edges = [], pulses = [], rafId = null, t0 = 0, running = false;
+  let mode = '2d';
+  let yaw = 0, pitch = 0;
+
+  function hexA(hex, a){
+    const h = hex.replace('#','');
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function resize(){
+    const r = cv.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio||1,2);
+    W = r.width; H = r.height;
+    cv.width = W*dpr; cv.height = H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if (!nodes.length) layout();
+    project();
+  }
+
+  function layout(){
+    nodes = []; edges = [];
+    const cx = W/2, cy = H/2;
+    // 3D mode: arrange agents on a sphere; 2D mode: flat hex ring
+    const ringR = Math.min(W, H) * 0.28;
+    agentList.forEach((ag, i) => {
+      const ang = (i / agentList.length) * Math.PI * 2 - Math.PI/2;
+      const tilt = (i % 2 === 0 ? 1 : -1) * 0.4; // alternating up/down for sphere look
+      nodes.push({
+        x0: Math.cos(ang)*ringR,
+        y0: Math.sin(ang)*ringR * 0.55,
+        z0: Math.sin(ang*1.3)*ringR*0.6 + tilt*ringR*0.3,
+        x: cx + Math.cos(ang)*ringR,
+        y: cy + Math.sin(ang)*ringR,
+        agent: true, color: ag.color, name: ag.name,
+        glow: 0.6, base: 0.9, r: 14
+      });
+    });
+    // Scatter ambient nodes in a sphere/cloud
+    for (let i = 0; i < NODE_COUNT; i++){
+      // Random point in spherical shell (for 3D)
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2*Math.random() - 1);
+      const rad = ringR * (0.35 + Math.random()*0.95);
+      const x0 = Math.sin(phi)*Math.cos(theta)*rad;
+      const y0 = Math.sin(phi)*Math.sin(theta)*rad * 0.7;
+      const z0 = Math.cos(phi)*rad;
+      // Independent 2D scatter (full screen, avoid agent ring center)
+      let x2, y2, ok = false, tries = 0;
+      while (!ok && tries < 30){
+        x2 = 30 + Math.random() * (W - 60) - W/2;
+        y2 = 30 + Math.random() * (H - 60) - H/2;
+        ok = true;
+        // avoid overlapping agent ring positions (first 6 nodes)
+        for (let k = 0; k < agentList.length; k++){
+          const ang = (k / agentList.length) * Math.PI * 2 - Math.PI/2;
+          const ax = Math.cos(ang)*ringR, ay = Math.sin(ang)*ringR;
+          if (Math.hypot(ax - x2, ay - y2) < 40){ ok = false; break; }
+        }
+        tries++;
+      }
+      nodes.push({
+        x0, y0, z0,
+        x2d: x2, y2d: y2,
+        x: cx + x2, y: cy + y2,
+        agent: false, glow: 0, base: 0.15 + Math.random()*0.2,
+        r: 1.5 + Math.random()*1.5
+      });
+    }
+    // Edges: nearest neighbors in 3D space
+    nodes.forEach((n, i) => {
+      const k = n.agent ? 18 : (2 + (Math.random()<.4?1:0));
+      const others = nodes.map((m, j) => ({j, d: Math.hypot(m.x0-n.x0, m.y0-n.y0, m.z0-n.z0)}))
+        .filter(o => o.j !== i).sort((a,b)=>a.d-b.d).slice(0, k);
+      others.forEach(o => {
+        if (!edges.some(e => (e.a===i&&e.b===o.j)||(e.a===o.j&&e.b===i))){
+          edges.push({ a: i, b: o.j, w: 0.2 + Math.random()*0.5, agentLink: n.agent || nodes[o.j].agent });
+        }
+      });
+    });
+  }
+
+  function project(){
+    const cx = W/2, cy = H/2;
+    const focal = Math.min(W, H) * 0.9;
+    if (mode === '2d'){
+      // Full-screen scatter using stored x2d/y2d
+      const ringR = Math.min(W, H) * 0.28;
+      nodes.forEach((n, i) => {
+        if (n.agent){
+          const ang = (i / agentList.length) * Math.PI * 2 - Math.PI/2;
+          n.x = cx + Math.cos(ang)*ringR;
+          n.y = cy + Math.sin(ang)*ringR;
+        } else {
+          n.x = cx + (n.x2d || n.x0);
+          n.y = cy + (n.y2d || n.y0);
+        }
+        n.depth = 1;
+      });
+    } else {
+      // 3D: rotate around y (yaw) and x (pitch), project with perspective
+      const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw);
+      const cp = Math.cos(pitch), sp = Math.sin(pitch);
+      nodes.forEach(n => {
+        // yaw
+        let x1 = n.x0 * cy_ - n.z0 * sy_;
+        let z1 = n.x0 * sy_ + n.z0 * cy_;
+        let y1 = n.y0;
+        // pitch
+        let y2 = y1 * cp - z1 * sp;
+        let z2 = y1 * sp + z1 * cp;
+        const persp = focal / (focal + z2 + 100);
+        n.x = cx + x1 * persp;
+        n.y = cy + y2 * persp;
+        n.depth = persp;
+      });
+    }
+  }
+
+  function spawnPulse(){
+    // Fire from a random agent hub through edges
+    const hubIdx = Math.floor(Math.random() * agentList.length);
+    const hub = nodes[hubIdx];
+    const outs = edges.filter(e => e.a === hubIdx || e.b === hubIdx).slice(0, 6);
+    outs.forEach(e => {
+      const from = e.a === hubIdx ? e.a : e.b;
+      const to = e.a === hubIdx ? e.b : e.a;
+      pulses.push({ from, to, t: 0, speed: 0.018 + Math.random()*0.012, color: hub.color });
+    });
+  }
+
+  function tick(ts){
+    if (!running) return;
+    const dt = t0 ? (ts - t0) : 16; t0 = ts;
+    if (mode === '3d'){
+      // user-controlled: yaw/pitch updated by drag, no auto-spin
+    }
+    project();
+    ctx.fillStyle = 'rgba(5,7,13,0.32)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges
+    ctx.lineWidth = 0.5;
+    edges.forEach(e => {
+      const a = nodes[e.a], b = nodes[e.b];
+      const col = e.agentLink ? (a.agent ? a.color : b.color) : PALETTE.accent;
+      ctx.strokeStyle = hexA(col, e.agentLink ? 0.10 : 0.05);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    });
+
+    // pulses
+    for (let i = pulses.length - 1; i >= 0; i--){
+      const p = pulses[i];
+      p.t += p.speed * (dt/16);
+      const a = nodes[p.from], b = nodes[p.to];
+      const x = a.x + (b.x-a.x)*p.t, y = a.y + (b.y-a.y)*p.t;
+      ctx.fillStyle = p.color; ctx.shadowBlur = 14; ctx.shadowColor = p.color;
+      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+      if (p.t >= 1){
+        nodes[p.to].glow = Math.min(1.5, nodes[p.to].glow + 0.6);
+        // chain
+        if (Math.random() < 0.5 && pulses.length < 80){
+          const nextEdges = edges.filter(e => (e.a===p.to||e.b===p.to)).slice(0, 2);
+          nextEdges.forEach(ne => {
+            const nf = p.to, nt = ne.a===p.to ? ne.b : ne.a;
+            if (nt !== p.from) pulses.push({from: nf, to: nt, t: 0, speed: p.speed*0.85, color: p.color});
+          });
+        }
+        pulses.splice(i,1);
+      }
+    }
+
+    // nodes (sort by depth back→front in 3D)
+    const drawOrder = mode === '3d' ? nodes.map((n,i)=>i).sort((a,b)=>(nodes[a].depth||1)-(nodes[b].depth||1)) : nodes.map((_,i)=>i);
+    drawOrder.forEach(i => {
+      const n = nodes[i];
+      const d = n.depth || 1;
+      if (n.agent){
+        const r = (n.r + n.glow*4) * d;
+        ctx.shadowBlur = 30*d; ctx.shadowColor = n.color;
+        ctx.fillStyle = n.color;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = hexA(n.color, 0.4*d); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r+8, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${0.6+0.4*d})`; ctx.font = `600 ${10*d+2}px Geist Mono, monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(n.name.toUpperCase(), n.x, n.y + r + 22*d);
+        n.glow *= 0.95;
+      } else {
+        const intensity = n.base + n.glow;
+        const col = intensity > 0.5 ? PALETTE.activate : (intensity > 0.3 ? PALETTE.nodeWarm : PALETTE.nodeIdle);
+        ctx.fillStyle = hexA(col, Math.min(0.9, (0.2 + intensity*0.6) * d));
+        ctx.shadowBlur = (4 + intensity*10) * d; ctx.shadowColor = PALETTE.activate;
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r * d, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        n.glow *= 0.94;
+      }
+    });
+
+    // ambient pulses
+    if (Math.random() < 0.08 && pulses.length < 60) spawnPulse();
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function start(){
+    cv.style.display = 'block';
+    document.getElementById('canvas').style.display = 'none';
+    running = true;
+    resize();
+    if (!rafId){ t0 = 0; rafId = requestAnimationFrame(tick); }
+  }
+  function stop(){
+    running = false;
+    if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    cv.style.display = 'none';
+    document.getElementById('canvas').style.display = 'block';
+  }
+  window.addEventListener('resize', () => { if (running) resize(); });
+
+  // Drag to rotate in 3D mode
+  let dragging = false, lastX = 0, lastY = 0;
+  cv.addEventListener('mousedown', (e) => { if (mode==='3d'){ dragging = true; lastX = e.clientX; lastY = e.clientY; cv.style.cursor = 'grabbing'; } });
+  window.addEventListener('mouseup', () => { dragging = false; cv.style.cursor = mode==='3d'?'grab':'default'; });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging || mode !== '3d') return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    yaw += dx * 0.005;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch + dy * 0.005));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+
+  window.officeNeural = { start, stop, setMode: m => { mode = m; cv.style.cursor = m==='3d'?'grab':'default'; project(); } };
+})();
+
+// View toggle
+document.querySelectorAll('.vt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const v = btn.dataset.view;
+    document.querySelectorAll('.vt-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+      b.style.background = (b === btn) ? 'rgba(125,249,255,0.15)' : 'transparent';
+      b.style.color = (b === btn) ? '#7df9ff' : 'rgba(255,255,255,0.55)';
+    });
+    const dimToggle = document.getElementById('dimToggle');
+    if (v === 'neural'){ window.officeNeural.start(); dimToggle.style.display = 'flex'; }
+    else { window.officeNeural.stop(); dimToggle.style.display = 'none'; }
+  });
+});
+
+// Dimension toggle (2D / 3D inside Neural Mind)
+document.querySelectorAll('.dim-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const m = btn.dataset.dim;
+    document.querySelectorAll('.dim-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+      b.style.background = (b === btn) ? 'rgba(167,139,250,0.18)' : 'transparent';
+      b.style.color = (b === btn) ? '#a78bfa' : 'rgba(255,255,255,0.55)';
+    });
+    window.officeNeural.setMode(m);
+  });
+});
+
+// Right-edge drawers
+(function setupDrawers(){
+  const tabs = document.querySelectorAll('.drawer-tab');
+  const drawers = {
+    hq: document.getElementById('drawer-hq'),
+    analytics: document.getElementById('drawer-analytics'),
+    sustain: document.getElementById('drawer-sustain'),
+  };
+  function closeAll(){ Object.values(drawers).forEach(d => d.classList.remove('open')); }
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const k = t.dataset.drawer; const d = drawers[k];
+    const wasOpen = d.classList.contains('open');
+    closeAll();
+    if (!wasOpen) d.classList.add('open');
+  }));
+  document.querySelectorAll('.drawer [data-close]').forEach(b => b.addEventListener('click', closeAll));
+})();
+
+// Live Agents panel toggle
+(function setupPanelToggle(){
+  const btn = document.getElementById('panelToggle');
+  const panel = document.getElementById('livePanel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', () => {
+    const collapsed = panel.classList.toggle('collapsed');
+    btn.classList.toggle('panel-open', !collapsed);
+    btn.textContent = collapsed ? '›' : '‹';
+    btn.title = collapsed ? 'Show Live Agents' : 'Hide Live Agents';
+  });
+})();
+
+document.getElementById('amClose').addEventListener('click', closeAgentModal);
+document.getElementById('chatFab').addEventListener('click', () => {
+  // Reopen last agent if any, otherwise default to first
+  const ag = modalAgent || agentMap[AGENTS[0].id];
+  openAgentModal(ag);
+});
+document.getElementById('amNewSession').addEventListener('click', () => {
+  if (modalAgent) { sessions[modalAgent.id] = []; renderConversation(); }
+});
+document.getElementById('amActivityToggle').addEventListener('click', () => {
+  if (!modalAgent) return;
+  setAgentActivityVisibility(modalAgent, !modalAgent.showActivity);
+  document.getElementById('amActivityToggle').classList.toggle('on', modalAgent.showActivity);
+});
+document.getElementById('amAttach').addEventListener('click', () => document.getElementById('amFile').click());
+document.getElementById('amFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (f && modalAgent) sendToAgent(`📎 attached: ${f.name}`);
+});
+document.getElementById('amMic').addEventListener('click', () => {
+  if (modalAgent) sendToAgent("🎙 (voice note placeholder)");
+});
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modalAgent) closeAgentModal(); });
+document.getElementById('amSend').addEventListener('click', () => {
+  const v = document.getElementById('amInput').value;
+  if (v.trim()) { sendToAgent(v); document.getElementById('amInput').value = ''; updateSendState(); }
+});
+document.getElementById('amInput').addEventListener('input', updateSendState);
+document.getElementById('amInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const v = e.target.value;
+    if (v.trim()) { sendToAgent(v); e.target.value = ''; updateSendState(); }
+  }
+});
+
+function showBubble(ag, text, dur = 3500) {
+  ag.bubbleTextEl.textContent = text;
+  ag.bubbleEl.classList.add('show');
+  ag.nextBubbleAt = performance.now() + dur;
+}
+function hideBubble(ag) { ag.bubbleEl.classList.remove('show'); }
+
+// Initial bubbles staggered
+let nextStart = 1500;
+Object.values(agentMap).forEach(ag => {
+  setTimeout(() => {
+    showBubble(ag, pick(PHRASES[ag.action] || PHRASES.idle), 3000);
+  }, nextStart);
+  nextStart += 700;
+});
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Schedule random bubbles
+setInterval(() => {
+  const ag = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  const a = agentMap[ag.id];
+  if (!a.bubbleEl.classList.contains('show')) {
+    showBubble(a, pick(PHRASES[a.action] || PHRASES.idle), 2800);
+  }
+}, 2200);
+
+// ─── Roster UI ────────────────────────────────────
+const rosterEl = document.getElementById('roster');
+let followingId = null;
+AGENTS.forEach(a => {
+  const el = document.createElement('div');
+  el.className = 'roster-item';
+  el.style.setProperty('--c', a.color);
+  el.innerHTML = `
+    <div class="ros-avatar">${a.name[0]}</div>
+    <div class="ros-info">
+      <div class="ros-name">${a.name}</div>
+      <div class="ros-role">${a.role} · ${a.action}</div>
+    </div>
+    <div class="ros-status" style="--s: #4ade80"></div>
+  `;
+  el.addEventListener('click', () => {
+    const ag = agentMap[a.id];
+    if (followingId === a.id) {
+      followingId = null;
+      el.classList.remove('active');
+      cameraState.targetTarget.set(0, 1, 0);
+    } else {
+      followingId = a.id;
+      document.querySelectorAll('.roster-item').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    }
+    openAgentModal(ag);
+  });
+  rosterEl.appendChild(el);
+});
+
+// ─── ANIMATE ──────────────────────────────────────
+const clock = new THREE.Clock();
+let frames = 0, lastFps = performance.now();
+let speedMul = 1;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime;
+
+  // FPS
+  frames++;
+  const now = performance.now();
+  if (now - lastFps > 600) {
+    document.getElementById('fps').textContent = Math.round((frames * 1000) / (now - lastFps)) + ' fps';
+    frames = 0; lastFps = now;
+  }
+
+  // Animate each agent
+  Object.values(agentMap).forEach(ag => animateAgent(ag, t * speedMul, dt * speedMul));
+
+  // Animate office accent: table screen pulse
+  tScreen.material.emissiveIntensity = 0.5 + Math.sin(t * 1.6) * 0.18;
+
+  // Server room LED pulses
+  for (let i = 0; i < serverLEDs.length; i++) {
+    const led = serverLEDs[i];
+    const v = 0.5 + 0.5 * Math.sin(t * 2.5 + led.phase);
+    // alternate green/blue/orange across racks for variety
+    const c = (i % 7 === 0) ? 0xff7849 : ((i % 5 === 0) ? 0x60a5fa : 0x4ade80);
+    led.mesh.material.color.setHex(c);
+    led.mesh.material.opacity = 0.4 + v * 0.6;
+    led.mesh.material.transparent = true;
+    led.mesh.scale.y = 0.6 + v * 1.4;
+  }
+
+  // Cleaning robot wanders slowly
+  roombaState.t += dt;
+  // Smooth orbit-like patrol around the open central area
+  const r = 6.5;
+  const cx = 2, cz = 5;
+  const ang = roombaState.t * 0.25;
+  roomba.position.x = cx + Math.cos(ang) * r;
+  roomba.position.z = cz + Math.sin(ang * 1.3) * (r * 0.55);
+  roomba.rotation.y = -ang * 1.5;
+
+  // Camera target lerp
+  if (followingId) {
+    const target = agentMap[followingId];
+    cameraState.targetTarget.set(target.pos.x, 1.2, target.pos.z);
+  }
+  cameraState.target.lerp(cameraState.targetTarget, 0.06);
+  setCamera();
+
+  // Update bubble positions
+  Object.values(agentMap).forEach(ag => {
+    if (!ag.bubbleEl.classList.contains('show')) return;
+    if (now > ag.nextBubbleAt) hideBubble(ag);
+    const v = new THREE.Vector3(0, 2.2, 0);
+    ag.group.localToWorld(v);
+    v.project(camera);
+    if (v.z > 1) { ag.bubbleEl.style.opacity = 0; return; }
+    const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+    ag.bubbleEl.style.left = `${x}px`;
+    ag.bubbleEl.style.top = `${y - 12}px`;
+  });
+
+  // Update activity cards (only for agents whose toggle is on)
+  Object.values(agentMap).forEach(ag => {
+    if (!ag.activityEl) return;
+    if (!ag.showActivity) {
+      if (ag.activityEl.classList.contains('show')) {
+        ag.activityEl.classList.remove('show');
+      }
+      return;
+    }
+    refreshActivityCard(ag);
+    const v = new THREE.Vector3(0, 2.55, 0);
+    ag.group.localToWorld(v);
+    v.project(camera);
+    if (v.z > 1) { ag.activityEl.style.opacity = 0; return; }
+    const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+    // Lift higher when chat bubble is currently showing so they stack
+    const lift = ag.bubbleEl.classList.contains('show') ? 64 : 14;
+    ag.activityEl.style.left = `${x}px`;
+    ag.activityEl.style.top = `${y - lift}px`;
+    ag.activityEl.style.opacity = '';
+    if (!ag.activityEl.classList.contains('show')) ag.activityEl.classList.add('show');
+  });
+
+  renderer.render(scene, camera);
+}
+
+function animateAgent(ag, t, dt) {
+  // Reset
+  ag.root.position.x = 0; ag.root.position.y = 0; ag.root.position.z = 0;
+  ag.torso.rotation.set(0, 0, 0); ag.torso.position.x = 0;
+  ag.hips.rotation.y = 0;
+  ag.head.rotation.set(0, 0, 0); ag.head.position.y = 1.02;
+  ag.armL.group.rotation.set(0, 0, 0); ag.armL.elbow.rotation.set(0, 0, 0);
+  ag.armR.group.rotation.set(0, 0, 0); ag.armR.elbow.rotation.set(0, 0, 0);
+  ag.legL.group.rotation.set(0, 0, 0); ag.legL.knee.rotation.set(0, 0, 0);
+  ag.legR.group.rotation.set(0, 0, 0); ag.legR.knee.rotation.set(0, 0, 0);
+  ag.mouth.scale.set(1, 1, 1);
+  ag.thought.visible = false;
+
+  // Eye blink (offset per agent)
+  const blink = Math.sin(t * 0.4 + ag.pos.x) > 0.985 ? 0.05 : 1;
+  ag.eyeL.scale.y = blink; ag.eyeR.scale.y = blink;
+
+  // Action behaviors
+  if (ag.action === 'type') {
+    // Sit on the chair: lift agent body to seat height + bend legs forward
+    ag.root.position.y = 0.5;
+    ag.torso.rotation.x = 0.18;
+    ag.armL.group.rotation.x = -1.0; ag.armR.group.rotation.x = -1.0;
+    ag.armL.group.rotation.z = 0.2; ag.armR.group.rotation.z = -0.2;
+    const tapL = Math.max(0, Math.sin(t * 8 + ag.pos.x)) * 0.18;
+    const tapR = Math.max(0, Math.sin(t * 8 + ag.pos.x + Math.PI/2)) * 0.18;
+    ag.armL.elbow.rotation.x = -0.6 + tapL;
+    ag.armR.elbow.rotation.x = -0.6 + tapR;
+    // Sitting pose: thighs forward, knees bent ~90°
+    ag.legL.group.rotation.x = Math.PI / 2 * 0.95;
+    ag.legR.group.rotation.x = Math.PI / 2 * 0.95;
+    ag.legL.knee.rotation.x = -Math.PI / 2 * 0.95;
+    ag.legR.knee.rotation.x = -Math.PI / 2 * 0.95;
+    ag.head.rotation.x = 0.15; ag.head.position.y = 1.0;
+
+    // Light desk keys
+    if (ag.station === 0 || ag.station === 1) {
+      const desk = desks[ag.station];
+      desk.keys.forEach((k, i) => {
+        const phase = (t * 6 + i * 0.7 + ag.pos.x) % 2;
+        k.material.emissiveIntensity = phase < 0.15 ? 1.2 : 0;
+      });
+    }
+  }
+
+  else if (ag.action === 'talk') {
+    ag.root.position.y = Math.sin(t * 1.6 + ag.pos.x) * 0.03;
+    ag.head.rotation.y = Math.sin(t * 1.5 + ag.pos.x) * 0.1;
+    ag.armL.group.rotation.x = -0.5 + Math.sin(t * 2 + ag.pos.x) * 0.2;
+    ag.armR.group.rotation.x = -0.5 - Math.sin(t * 2 + ag.pos.x) * 0.2;
+    ag.armL.group.rotation.z = 0.4; ag.armR.group.rotation.z = -0.4;
+    ag.armL.elbow.rotation.x = -0.6 + Math.sin(t * 3 + ag.pos.x) * 0.3;
+    ag.armR.elbow.rotation.x = -0.6 - Math.sin(t * 3 + ag.pos.x) * 0.3;
+    const open = (Math.sin(t * 7 + ag.pos.x) + 1) / 2;
+    ag.mouth.scale.set(1 + open * 0.4, 1 + open * 1.6, 1);
+  }
+
+  else if (ag.action === 'think') {
+    ag.thought.visible = true;
+    ag.root.position.y = Math.sin(t * 1.4 + ag.pos.x) * 0.025;
+    ag.armR.group.rotation.x = -1.6;
+    ag.armR.group.rotation.z = -0.5;
+    ag.armR.elbow.rotation.x = -1.4;
+    ag.head.rotation.z = -0.18;
+    ag.head.rotation.y = -0.18;
+    ag.thought.children.forEach((m, i) => {
+      m.scale.setScalar(0.85 + Math.sin(t * 3 + i * 0.6) * 0.18);
+    });
+    // sit: she's on lounge
+    ag.legL.group.rotation.x = 0.4; ag.legR.group.rotation.x = 0.4;
+    ag.legL.knee.rotation.x = -0.6; ag.legR.knee.rotation.x = -0.6;
+  }
+
+  else if (ag.action === 'walk') {
+    // Walking with movement + obstacle avoidance (slide along axes)
+    if (!ag.walkTarget) ag.walkTarget = pickNextWanderTarget(ag);
+    if (ag.stuckTimer === undefined) ag.stuckTimer = 0;
+    if (!ag.lastPos) ag.lastPos = ag.pos.clone();
+
+    const dir = ag.walkTarget.clone().sub(ag.pos);
+    const dist = dir.length();
+    if (dist < 0.4) {
+      ag.walkTarget = pickNextWanderTarget(ag);
+      ag.stuckTimer = 0;
+    } else {
+      dir.normalize();
+      const speed = 1.2;
+      const stepX = dir.x * speed * dt;
+      const stepZ = dir.z * speed * dt;
+
+      // Try full step
+      const tryPos = { x: ag.pos.x + stepX, z: ag.pos.z + stepZ };
+      clampToRoom(tryPos);
+      const blockedFull = avoidObstacles(tryPos);
+
+      let usedDir = dir;
+      if (!blockedFull) {
+        ag.pos.x = tryPos.x; ag.pos.z = tryPos.z;
+      } else {
+        // Slide: try X-only, then Z-only
+        const tryX = { x: ag.pos.x + stepX, z: ag.pos.z };
+        clampToRoom(tryX);
+        const blockedX = avoidObstacles(tryX);
+        const tryZ = { x: ag.pos.x, z: ag.pos.z + stepZ };
+        clampToRoom(tryZ);
+        const blockedZ = avoidObstacles(tryZ);
+        if (!blockedX) {
+          ag.pos.x = tryX.x; ag.pos.z = tryX.z;
+          usedDir = { x: Math.sign(stepX), z: 0 };
+        } else if (!blockedZ) {
+          ag.pos.x = tryZ.x; ag.pos.z = tryZ.z;
+          usedDir = { x: 0, z: Math.sign(stepZ) };
+        } else {
+          // fully stuck - pick new target
+          ag.walkTarget = pickNextWanderTarget(ag);
+        }
+      }
+
+      // Stuck detection: if we barely moved for a while, replan
+      const moved = Math.hypot(ag.pos.x - ag.lastPos.x, ag.pos.z - ag.lastPos.z);
+      if (moved < 0.01) {
+        ag.stuckTimer += dt;
+        if (ag.stuckTimer > 0.5) {
+          ag.walkTarget = pickNextWanderTarget(ag);
+          ag.stuckTimer = 0;
+        }
+      } else {
+        ag.stuckTimer = 0;
+      }
+      ag.lastPos.set(ag.pos.x, 0, ag.pos.z);
+
+      const targetFacing = Math.atan2(usedDir.x, usedDir.z);
+      let df = targetFacing - ag.facing;
+      while (df > Math.PI) df -= Math.PI * 2;
+      while (df < -Math.PI) df += Math.PI * 2;
+      ag.facing += df * Math.min(1, dt * 6);
+    }
+    ag.group.position.set(ag.pos.x, 0, ag.pos.z);
+    ag.group.rotation.y = ag.facing;
+
+    // walk cycle
+    const w = t * 4;
+    ag.root.position.y = Math.abs(Math.sin(w)) * 0.07;
+    ag.legL.group.rotation.x = Math.sin(w) * 0.6;
+    ag.legR.group.rotation.x = -Math.sin(w) * 0.6;
+    ag.legL.knee.rotation.x = Math.max(0, Math.sin(w + Math.PI/2)) * 0.5;
+    ag.legR.knee.rotation.x = Math.max(0, -Math.sin(w + Math.PI/2)) * 0.5;
+    ag.armL.group.rotation.x = -Math.sin(w) * 0.55;
+    ag.armR.group.rotation.x = Math.sin(w) * 0.55;
+    ag.torso.rotation.x = 0.04;
+    return; // skip the static-pos set below
+  }
+
+  else { // idle
+    const breath = Math.sin(t * 1.6 + ag.pos.x) * 0.03;
+    ag.root.position.y = breath;
+    ag.head.rotation.y = Math.sin(t * 0.5 + ag.pos.x) * 0.15;
+    ag.armL.group.rotation.x = Math.sin(t * 1.6 + ag.pos.x) * 0.04;
+    ag.armR.group.rotation.x = -Math.sin(t * 1.6 + ag.pos.x) * 0.04;
+  }
+
+  // Apply static position for non-walking
+  ag.group.position.set(ag.pos.x, ag.yOffset || 0, ag.pos.z);
+  ag.group.rotation.y = ag.facing;
+  ag.glow.material.opacity = 0.35 + Math.sin(t * 1.3 + ag.pos.x) * 0.1;
+  ag.antBall.position.y = 0.58 + Math.sin(t * 4 + ag.pos.x) * 0.02;
+}
+
+// ─── INPUT: drag camera, scroll zoom ──────────────
+let dragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener('pointerdown', (e) => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  cameraState.orbit -= dx * 0.3;
+  cameraState.tilt = Math.max(15, Math.min(65, cameraState.tilt - dy * 0.2));
+  document.getElementById('orbit').value = cameraState.orbit;
+  document.getElementById('orbitVal').textContent = Math.round(cameraState.orbit) + '°';
+  document.getElementById('tilt').value = cameraState.tilt;
+  document.getElementById('tiltVal').textContent = Math.round(cameraState.tilt) + '°';
+  lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('pointerup', (e) => { dragging = false; canvas.releasePointerCapture(e.pointerId); });
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  cameraState.zoom = Math.max(0.6, Math.min(1.6, cameraState.zoom - e.deltaY * 0.0008));
+  document.getElementById('zoom').value = cameraState.zoom;
+  document.getElementById('zoomVal').textContent = cameraState.zoom.toFixed(2) + '×';
+}, { passive: false });
+
+// Click an agent → open contextual interaction modal
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+canvas.addEventListener('click', (e) => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const all = Object.values(agentMap).flatMap(ag => {
+    const meshes = [];
+    ag.group.traverse(o => { if (o.isMesh) meshes.push(o); });
+    return meshes.map(m => ({ ag, m }));
+  });
+  const hits = raycaster.intersectObjects(all.map(x => x.m), false);
+  if (hits.length > 0) {
+    const hit = all.find(x => x.m === hits[0].object);
+    if (hit) openAgentModal(hit.ag);
+  }
+});
+
+// Slider bindings
+document.getElementById('orbit').addEventListener('input', (e) => {
+  cameraState.orbit = parseFloat(e.target.value);
+  document.getElementById('orbitVal').textContent = Math.round(cameraState.orbit) + '°';
+});
+document.getElementById('tilt').addEventListener('input', (e) => {
+  cameraState.tilt = parseFloat(e.target.value);
+  document.getElementById('tiltVal').textContent = Math.round(cameraState.tilt) + '°';
+});
+document.getElementById('zoom').addEventListener('input', (e) => {
+  cameraState.zoom = parseFloat(e.target.value);
+  document.getElementById('zoomVal').textContent = cameraState.zoom.toFixed(2) + '×';
+});
+document.getElementById('speed').addEventListener('input', (e) => {
+  speedMul = parseFloat(e.target.value);
+  document.getElementById('speedVal').textContent = speedMul.toFixed(1) + '×';
+});
+
+// Resize
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+setCamera();
+animate();
+</script>
+
+</body>
+</html>
